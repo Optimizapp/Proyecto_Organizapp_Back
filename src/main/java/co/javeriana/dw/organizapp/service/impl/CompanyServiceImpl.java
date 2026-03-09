@@ -1,6 +1,8 @@
 package co.javeriana.dw.organizapp.service.impl;
 
 import co.javeriana.dw.organizapp.entity.Company;
+import co.javeriana.dw.organizapp.exception.CompanyNotFoundException;
+import co.javeriana.dw.organizapp.exception.DuplicateCompanyException;
 import co.javeriana.dw.organizapp.repository.CompanyRepository;
 import co.javeriana.dw.organizapp.service.CompanyService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +38,7 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     public Company findById(Long id) {
         return companyRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Empresa no encontrada con ID: " + id));
+                .orElseThrow(() -> new CompanyNotFoundException(id));
     }
 
     /**
@@ -46,6 +48,7 @@ public class CompanyServiceImpl implements CompanyService {
      */
     @Override
     public Company create(Company company) {
+        validateDuplicatesForCreate(company);
         return companyRepository.save(company);
     }
 
@@ -59,6 +62,7 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     public Company update(Long id, Company company) {
         Company existingCompany = findById(id);
+        validateDuplicatesForUpdate(existingCompany, company);
         existingCompany.setName(company.getName());
         existingCompany.setNit(company.getNit());
         existingCompany.setIndustry(company.getIndustry());
@@ -74,5 +78,23 @@ public class CompanyServiceImpl implements CompanyService {
     public void delete(Long id) {
         Company existingCompany = findById(id);
         companyRepository.delete(existingCompany);
+    }
+
+    private void validateDuplicatesForCreate(Company company) {
+        if (companyRepository.existsByName(company.getName())) {
+            throw new DuplicateCompanyException("Ya existe una empresa con nombre: " + company.getName());
+        }
+        if (companyRepository.existsByNit(company.getNit())) {
+            throw new DuplicateCompanyException("Ya existe una empresa con NIT: " + company.getNit());
+        }
+    }
+
+    private void validateDuplicatesForUpdate(Company existingCompany, Company company) {
+        if (!existingCompany.getName().equals(company.getName()) && companyRepository.existsByName(company.getName())) {
+            throw new DuplicateCompanyException("Ya existe una empresa con nombre: " + company.getName());
+        }
+        if (!existingCompany.getNit().equals(company.getNit()) && companyRepository.existsByNit(company.getNit())) {
+            throw new DuplicateCompanyException("Ya existe una empresa con NIT: " + company.getNit());
+        }
     }
 }

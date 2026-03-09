@@ -2,6 +2,7 @@ package co.javeriana.dw.organizapp.controller;
 
 import co.javeriana.dw.organizapp.entity.Company;
 import co.javeriana.dw.organizapp.service.CompanyService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,7 +48,7 @@ public class CompanyController {
      * @return Empresa creada
      */
     @PostMapping
-    public ResponseEntity<Company> createCompany(@RequestBody Company company) {
+    public ResponseEntity<Company> createCompany(@Valid @RequestBody Company company) {
         Company createdCompany = companyService.create(company);
         return new ResponseEntity<>(createdCompany, HttpStatus.CREATED);
     }
@@ -59,7 +60,7 @@ public class CompanyController {
      * @return Empresa actualizada
      */
     @PutMapping("/{id}")
-    public ResponseEntity<Company> updateCompany(@PathVariable Long id, @RequestBody Company company) {
+    public ResponseEntity<Company> updateCompany(@PathVariable Long id, @Valid @RequestBody Company company) {
         Company updatedCompany = companyService.update(id, company);
         return new ResponseEntity<>(updatedCompany, HttpStatus.OK);
     }
