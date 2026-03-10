@@ -1,12 +1,12 @@
-name: Build and Deploy with MicroK8s
+name: Build and Deploy Organizapp
 
 on:
   push:
-    branches: [main]
+    branches: [ Dev ] # Se dispara al subir cambios a dev
 
 jobs:
   build-and-publish:
-    name: Build and Push Image to GHCR
+    name: Build, Test and Push Image
     runs-on: ubuntu-latest
 
     permissions:
@@ -14,14 +14,22 @@ jobs:
       packages: write
 
     steps:
-    - name: Mostrar rama actual
-      run: "echo 'Rama actual: ${{ github.ref }}'"
-
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Set OWNER_LC
-      run: echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
+    - name: Set up JDK 17 # Asegura que el entorno tenga Java
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Run Unit Tests # CALIDAD: Si esto falla, el deploy se detiene
+      run: chmod +x mvnw && ./mvnw clean test
+
+    - name: Set OWNER_LC (Lower Case GitHub Username)
+      run: |
+        echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
 
     - name: Log in to GHCR
       uses: docker/login-action@v3
@@ -30,24 +38,11 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build Docker image
-      run: docker build -t ghcr.io/${OWNER_LC}/<nombredelrepo>:latest .
-
-    - name: Push Docker image
-      run: docker push ghcr.io/${OWNER_LC}/<nombredelrepo>:latest
-
-    - name: Print pushed image URL
-      run: 'echo "Imagen publicada: ghcr.io/${OWNER_LC}/<nombredelrepo>:latest"'
-
-  deploy-onpremise:
-    name: Deploy on MicroK8s On-Premise
-    runs-on: main
-    needs: build-and-publish
-
-    steps:
-    - name: Checkout repo
-      uses: actions/checkout@v3
-    - name: Apply Kubernetes deployment
-      run: sudo microk8s kubectl apply -f k8s/deployment.yaml
-    - name: Restart Kubernetes deployment
-      run: sudo microk8s kubectl rollout restart deployment/<nombredeplyment> -n <nombrenamespace>
+    - name: Build and Push Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        # Reemplaza 'proyecto-organizapp-back' con el nombre real de tu repo si prefieres
+        tags: |
+          ghcr.io/${{ env.OWNER_LC }}/Proyecto_Organizapp_Back:latest
