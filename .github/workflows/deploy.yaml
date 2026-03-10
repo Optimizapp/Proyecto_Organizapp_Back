@@ -45,4 +45,4 @@ jobs:
         push: true
         # Reemplaza 'proyecto-organizapp-back' con el nombre real de tu repo si prefieres
         tags: |
-          ghcr.io/${{ env.OWNER_LC }}/Proyecto_Organizapp_Back:latest
+          ghcr.io/${{ env.OWNER_LC }}/proyecto_organizapp_back:latest
