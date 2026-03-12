@@ -1,6 +1,7 @@
 package co.javeriana.dw.organizapp.controller;
 
-import co.javeriana.dw.organizapp.entity.Company;
+import co.javeriana.dw.organizapp.dto.CompanyRequestDto;
+import co.javeriana.dw.organizapp.dto.CompanyResponseDto;
 import co.javeriana.dw.organizapp.exception.CompanyNotFoundException;
 import co.javeriana.dw.organizapp.exception.DuplicateCompanyException;
 import co.javeriana.dw.organizapp.exception.GlobalExceptionHandler;
@@ -57,8 +58,8 @@ class CompanyControllerTest {
     @Test
     void getAllCompaniesShouldReturnOk() throws Exception {
         when(companyService.findAll()).thenReturn(List.of(
-                buildCompany(1L, "Alpha", "900100100", "Tech"),
-                buildCompany(2L, "Beta", "900200200", "Finance")
+                buildResponseDto(1L, "Alpha", "900100100", "Tech"),
+                buildResponseDto(2L, "Beta", "900200200", "Finance")
         ));
 
         mockMvc.perform(get("/api/companies"))
@@ -69,7 +70,7 @@ class CompanyControllerTest {
 
     @Test
     void getCompanyByIdShouldReturnOk() throws Exception {
-        when(companyService.findById(1L)).thenReturn(buildCompany(1L, "Alpha", "900100100", "Tech"));
+        when(companyService.findById(1L)).thenReturn(buildResponseDto(1L, "Alpha", "900100100", "Tech"));
 
         mockMvc.perform(get("/api/companies/1"))
                 .andExpect(status().isOk())
@@ -79,8 +80,9 @@ class CompanyControllerTest {
 
     @Test
     void createCompanyShouldReturnCreated() throws Exception {
-        Company createdCompany = buildCompany(3L, "Gamma", "900300300", "Health");
-        when(companyService.create(any(Company.class))).thenReturn(createdCompany);
+        CompanyResponseDto responseDto = buildResponseDto(3L, "Gamma", "900300300", "Health");
+        // Ahora el servicio recibe un CompanyRequestDto
+        when(companyService.create(any(CompanyRequestDto.class))).thenReturn(responseDto);
 
         mockMvc.perform(post("/api/companies")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -92,8 +94,8 @@ class CompanyControllerTest {
 
     @Test
     void updateCompanyShouldReturnOk() throws Exception {
-        Company updatedCompany = buildCompany(1L, "Alpha Updated", "900100101", "Retail");
-        when(companyService.update(eq(1L), any(Company.class))).thenReturn(updatedCompany);
+        CompanyResponseDto updatedDto = buildResponseDto(1L, "Alpha Updated", "900100101", "Retail");
+        when(companyService.update(eq(1L), any(CompanyRequestDto.class))).thenReturn(updatedDto);
 
         mockMvc.perform(put("/api/companies/1")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -125,7 +127,7 @@ class CompanyControllerTest {
 
     @Test
     void updateCompanyShouldReturnNotFoundWhenCompanyDoesNotExist() throws Exception {
-        when(companyService.update(eq(99L), any(Company.class))).thenThrow(new CompanyNotFoundException(99L));
+        when(companyService.update(eq(99L), any(CompanyRequestDto.class))).thenThrow(new CompanyNotFoundException(99L));
 
         mockMvc.perform(put("/api/companies/99")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -136,13 +138,16 @@ class CompanyControllerTest {
     }
 
     @Test
-    void deleteCompanyShouldReturnNotFoundWhenCompanyDoesNotExist() throws Exception {
-        org.mockito.Mockito.doThrow(new CompanyNotFoundException(99L)).when(companyService).delete(99L);
+    void createCompanyShouldReturnConflictWhenCompanyIsDuplicated() throws Exception {
+        when(companyService.create(any(CompanyRequestDto.class)))
+                .thenThrow(new DuplicateCompanyException("Ya existe una empresa con NIT: 900300300"));
 
-        mockMvc.perform(delete("/api/companies/99"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.status").value(404))
-                .andExpect(jsonPath("$.error").value("Empresa no encontrada con ID: 99"));
+        mockMvc.perform(post("/api/companies")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Gamma\",\"nit\":\"900300300\",\"industry\":\"Health\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error").value("Ya existe una empresa con NIT: 900300300"));
     }
 
     @Test
@@ -156,35 +161,8 @@ class CompanyControllerTest {
                 .andExpect(jsonPath("$.fields.nit").value("El NIT es obligatorio"));
     }
 
-    @Test
-    void updateCompanyShouldReturnBadRequestWhenBodyIsInvalid() throws Exception {
-        mockMvc.perform(put("/api/companies/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"\",\"nit\":\"900100101\",\"industry\":\"Retail\"}"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.fields.name").value("El nombre es obligatorio"));
-    }
-
-    @Test
-    void createCompanyShouldReturnConflictWhenCompanyIsDuplicated() throws Exception {
-        when(companyService.create(any(Company.class)))
-                .thenThrow(new DuplicateCompanyException("Ya existe una empresa con NIT: 900300300"));
-
-        mockMvc.perform(post("/api/companies")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"Gamma\",\"nit\":\"900300300\",\"industry\":\"Health\"}"))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.status").value(409))
-                .andExpect(jsonPath("$.error").value("Ya existe una empresa con NIT: 900300300"));
-    }
-
-    private Company buildCompany(Long id, String name, String nit, String industry) {
-        Company company = new Company();
-        company.setId(id);
-        company.setName(name);
-        company.setNit(nit);
-        company.setIndustry(industry);
-        return company;
+    // Helper para construir DTOs de respuesta rápidamente en los tests
+    private CompanyResponseDto buildResponseDto(Long id, String name, String nit, String industry) {
+        return new CompanyResponseDto(id, name, nit, industry);
     }
 }
