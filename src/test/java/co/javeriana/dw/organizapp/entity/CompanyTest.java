@@ -16,6 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+
 class CompanyTest {
 
     private ValidatorFactory validatorFactory;
@@ -63,7 +64,7 @@ class CompanyTest {
         Set<ConstraintViolation<Company>> violations = validator.validate(company);
 
         assertFalse(violations.isEmpty());
-        //assertEquals(2, violations.size());
+        assertEquals(2, violations.size());
     }
 
     @Test

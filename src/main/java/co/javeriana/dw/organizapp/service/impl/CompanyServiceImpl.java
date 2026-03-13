@@ -28,10 +28,10 @@ public class CompanyServiceImpl implements CompanyService {
 
     @Override
     public List<CompanyResponseDto> findAll() {
-        return companyRepository.findAll().stream()
-                .map(company -> modelMapper.map(company, CompanyResponseDto.class))
-                .collect(Collectors.toList());
-    }
+    return companyRepository.findAll().stream()
+            .map(company -> modelMapper.map(company, CompanyResponseDto.class))
+            .toList(); // <--- Mucho más limpio y moderno
+}
 
     @Override
     public CompanyResponseDto findById(Long id) {
