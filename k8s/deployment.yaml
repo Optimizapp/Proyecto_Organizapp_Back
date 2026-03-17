@@ -1,15 +1,18 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: organizapp
----
+# NOTA: He eliminado la creación del Namespace. 
+# Usa el que te asignó el profesor en GitHub Secrets.
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: organizapp-backend
-  namespace: organizapp
+  namespace: grupo14 # Reemplazar por el asignado (ej: grupo-01)
 spec:
   replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: organizapp-backend
@@ -19,19 +22,50 @@ spec:
         app: organizapp-backend
     spec:
       imagePullSecrets:
-      - name: ghcr-secret
+        - name: ghcr-secret # Asegúrate de que este secret exista en el clúster
       containers:
-      - name: organizapp-backend
-        image: ghcr.io/diegofernzab/proyecto_organizapp_back:latest
-        ports:
-        - containerPort: 8080
+        - name: organizapp-backend
+          image: ghcr.io/diegofernzab/proyecto_organizapp_back:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          # Límites de recursos: Indispensable para estabilidad
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          # Variables de entorno para conectar la DB del clúster
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://tu-servicio-db:3306/organizapp_db?useSSL=false"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "root"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "password_del_cluster"
+          # Health Checks (Puntos extra por confiabilidad)
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness # Requiere dependencia spring-boot-starter-actuator
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 5
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: organizapp-backend
-  namespace: organizapp
+  namespace: grupo14
 spec:
+  type: ClusterIP
   selector:
     app: organizapp-backend
   ports:
@@ -42,18 +76,20 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-   name: organizapp-backend
-   namespace: organizapp
+  name: organizapp-backend
+  namespace: grupo14
+  annotations:
+    kubernetes.io/ingress.class: "public"
+    # Si usan SSL/TLS, aquí irían las anotaciones de cert-manager
 spec:
-   ingressClassName: public
-   rules:
-   - host: grupox.inphotech.co
-     http:
-       paths:
-       - path: /
-         pathType: Prefix
-         backend:
-           service:
-             name: organizapp-backend
-             port:
-               number: 8080
+  rules:
+    - host: grupox.inphotech.co # Asegúrate de que 'grupox' sea el subdominio asignado
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: organizapp-backend
+                port:
+                  number: 8080
