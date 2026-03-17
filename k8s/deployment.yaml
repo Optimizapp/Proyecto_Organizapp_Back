@@ -19,12 +19,37 @@ spec:
         app: organizapp-backend
     spec:
       imagePullSecrets:
-      - name: ghcr-secret
+        - name: ghcr-secret
       containers:
-      - name: organizapp-backend
-        image: ghcr.io/diegofernzab/proyecto_organizapp_back:latest
-        ports:
-        - containerPort: 8080
+        - name: organizapp-backend
+          image: ghcr.io/diegofernzab/proyecto_organizapp_back:latest
+          imagePullPolicy: Always
+          envFrom:
+            - secretRef:
+                name: organizapp-backend-secrets
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
 ---
 apiVersion: v1
 kind: Service
@@ -42,18 +67,18 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-   name: organizapp-backend
-   namespace: organizapp
+  name: organizapp-backend
+  namespace: organizapp
 spec:
-   ingressClassName: public
-   rules:
-   - host: grupox.inphotech.co
-     http:
-       paths:
-       - path: /
-         pathType: Prefix
-         backend:
-           service:
-             name: organizapp-backend
-             port:
-               number: 8080
+  ingressClassName: public
+  rules:
+    - host: grupox.inphotech.co
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: organizapp-backend
+                port:
+                  number: 8080
