@@ -1,11 +1,13 @@
-# NOTA: He eliminado la creación del Namespace. 
-# Usa el que te asignó el profesor en GitHub Secrets.
-
+# Evaluación: Arquitectura de Despliegue Robusta
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: organizapp-backend
-  namespace: grupo14
+  namespace: grupo14 # Confirmado según tu monitor
+  labels:
+    app: organizapp-backend
+    component: api
+    tier: backend
 spec:
   replicas: 2
   strategy:
@@ -22,14 +24,15 @@ spec:
         app: organizapp-backend
     spec:
       imagePullSecrets:
-        - name: ghcr-secret # Asegúrate de que este secret exista en el clúster
+        - name: ghcr-secret 
       containers:
         - name: organizapp-backend
-          image: ghcr.io/diegofernzab/proyecto_organizapp_back:latest
+          # CRÍTICO: Asegúrate que este sea el nombre exacto que arroja tu GitHub Action
+          image: ghcr.io/diegofernzab/optimizapp-backend:latest 
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
-          # Límites de recursos: Indispensable para estabilidad
+              name: http
           resources:
             requests:
               memory: "256Mi"
@@ -37,27 +40,29 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
-          # Variables de entorno para conectar la DB del clúster
           env:
             - name: SPRING_DATASOURCE_URL
-              value: "jdbc:mysql://tu-servicio-db:3306/organizapp_db?useSSL=false"
+              value: "jdbc:mysql://mysql-service:3306/organizapp_db?useSSL=false&allowPublicKeyRetrieval=true"
             - name: SPRING_DATASOURCE_USERNAME
               value: "root"
+            # MEJORA DE SEGURIDAD: Uso de Secrets para credenciales
             - name: SPRING_DATASOURCE_PASSWORD
-              value: "password_del_cluster"
-          # Health Checks (Puntos extra por confiabilidad)
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: password
           livenessProbe:
             httpGet:
-              path: /actuator/health/liveness # Requiere dependencia spring-boot-starter-actuator
-              port: 8080
-            initialDelaySeconds: 30
-            periodSeconds: 10
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 40 # Aumentado para dar tiempo a que cargue el contexto de Spring
+            periodSeconds: 15
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
-              port: 8080
-            initialDelaySeconds: 20
-            periodSeconds: 5
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
 ---
 apiVersion: v1
 kind: Service
@@ -70,8 +75,9 @@ spec:
     app: organizapp-backend
   ports:
     - protocol: TCP
-      port: 8080
+      port: 80
       targetPort: 8080
+      name: http
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -80,10 +86,10 @@ metadata:
   namespace: grupo14
   annotations:
     kubernetes.io/ingress.class: "public"
-    # Si usan SSL/TLS, aquí irían las anotaciones de cert-manager
+    nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   rules:
-    - host: grupox.inphotech.co # Asegúrate de que 'grupox' sea el subdominio asignado
+    - host: grupo14.inphotech.co # Ajustado a tu subdominio de grupo
       http:
         paths:
           - path: /
@@ -92,4 +98,4 @@ spec:
               service:
                 name: organizapp-backend
                 port:
-                  number: 8080
+                  name: http
