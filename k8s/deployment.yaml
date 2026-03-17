@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: organizapp
+  namespace: grupo14
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -30,7 +31,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: organizapp-backend
-  namespace: organizapp
+  namespace: grupo14
+  
 spec:
   selector:
     app: organizapp-backend
@@ -43,7 +45,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
    name: organizapp-backend
-   namespace: organizapp
+   namespace: grupo14
 spec:
    ingressClassName: public
    rules:
