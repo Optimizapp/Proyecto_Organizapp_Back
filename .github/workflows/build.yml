@@ -1,39 +1,57 @@
-name: Build
+name: Build, Analyze and Dockerize
 
 on:
   push:
     branches:
-      - Dev
-
+      - Dev  # Se dispara cada vez que el grupo integra código en Dev
 
 jobs:
-  build:
-    name: Build and analyze
+  build-and-analyze:
+    name: Quality and Delivery Pipeline
     runs-on: ubuntu-latest
     
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      - name: Set up JDK 17
+          fetch-depth: 0
+
+      - name: Set up JDK 21 # Actualizado a 21 para coincidir con tu Dockerfile
         uses: actions/setup-java@v4
         with:
-          java-version: 17
-          distribution: 'zulu' # Alternative distribution options are available.
+          java-version: '21'
+          distribution: 'temurin' # Temurin es el estándar de la industria
+          cache: 'maven' # GitHub Actions ya tiene una opción simplificada para cachear Maven
+
       - name: Cache SonarQube packages
         uses: actions/cache@v4
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
-      - name: Cache Maven packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-      - name: Build and analyze
+
+      # 1. ANALISIS DE CALIDAD (Lo que ya tenías, mejorado con Wrapper)
+      - name: Build and analyze with Sonar
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=optimizapp -Dsonar.projectName='optimizapp'
+        run: |
+          chmod +x mvnw
+          ./mvnw -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+          -Dsonar.projectKey=optimizapp \
+          -Dsonar.projectName='optimizapp'
+
+      # 2. LOGIN EN REGISTRY (Usando tus nuevos Secrets)
+      - name: Log in to GitHub Container Registry
+        if: success() # Solo si el build y sonar pasaron
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.CR_USER }}
+          password: ${{ secrets.CR_PAT }}
+
+      # 3. BUILD Y PUSH DE DOCKER (El "intento" que pide el profesor)
+      - name: Build and Push Docker Image
+        if: success()
+        run: |
+          docker build -t ghcr.io/${{ secrets.CR_USER }}/optimizapp-backend:latest .
+          docker push ghcr.io/${{ secrets.CR_USER }}/optimizapp-backend:latest
