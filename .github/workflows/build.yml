@@ -3,7 +3,7 @@ name: Build, Analyze and Dockerize
 on:
   push:
     branches:
-      - Dev  # Se dispara cada vez que el grupo integra código en Dev
+      - feature/issue-2-company-dtos  # Se dispara cada vez que el grupo integra código en Dev
 
 jobs:
   build-and-analyze:
