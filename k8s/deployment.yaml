@@ -1,14 +1,10 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: organizapp
-  namespace: grupo14
+
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: organizapp-backend
-  namespace: organizapp
+  namespace: grupo14
 spec:
   replicas: 2
   selector:
