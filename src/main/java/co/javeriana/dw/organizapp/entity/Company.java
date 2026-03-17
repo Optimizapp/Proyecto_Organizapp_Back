@@ -1,17 +1,30 @@
 package co.javeriana.dw.organizapp.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "companies")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class Company {
@@ -40,6 +53,16 @@ public class Company {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    // Una empresa puede tener muchos usuarios asociados.
+    @ToString.Exclude
+    @OneToMany(mappedBy = "company")
+    private Set<User> users = new HashSet<>();
+
+    // Una empresa puede definir muchos procesos organizacionales.
+    @ToString.Exclude
+    @OneToMany(mappedBy = "company")
+    private Set<Process> processes = new HashSet<>();
+
     @PrePersist
     public void prePersist() {
         createdAt = LocalDateTime.now();
@@ -51,51 +74,23 @@ public class Company {
         updatedAt = LocalDateTime.now();
     }
 
-    public Long getId() {
-        return id;
+    public void addUser(User user) {
+        users.add(user);
+        user.setCompany(this);
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void removeUser(User user) {
+        users.remove(user);
+        user.setCompany(null);
     }
 
-    public String getName() {
-        return name;
+    public void addProcess(Process process) {
+        processes.add(process);
+        process.setCompany(this);
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getNit() {
-        return nit;
-    }
-
-    public void setNit(String nit) {
-        this.nit = nit;
-    }
-
-    public String getIndustry() {
-        return industry;
-    }
-
-    public void setIndustry(String industry) {
-        this.industry = industry;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
+    public void removeProcess(Process process) {
+        processes.remove(process);
+        process.setCompany(null);
     }
 }
