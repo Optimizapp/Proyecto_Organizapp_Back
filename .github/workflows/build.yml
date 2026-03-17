@@ -1,13 +1,13 @@
-name: Build, Analyze and Deploy
+name: Build, Analyze and Dockerize
 
 on:
   push:
     branches:
-      - feature/issue-2-company-dtos
-      - Dev # Te sugiero incluir Dev para que los intentos se vean al integrar
+      - Dev
+      - 'feature/**' # Recomendado para ver intentos en ramas de trabajo
 
 jobs:
-  build-and-deploy:
+  pipeline:
     name: Quality and Delivery Pipeline
     runs-on: ubuntu-latest
     
@@ -15,7 +15,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # Necesario para un análisis de SonarQube preciso
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -24,8 +24,9 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      # 1. ANÁLISIS DE CALIDAD
-      - name: Build and analyze with Sonar
+      # 1. Análisis de Calidad (SonarQube)
+      # Un evaluador senior busca que no despliegues código con bugs conocidos
+      - name: SonarQube Analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
@@ -35,8 +36,8 @@ jobs:
           -Dsonar.projectKey=optimizapp \
           -Dsonar.projectName='optimizapp'
 
-      # 2. NORMALIZACIÓN Y LOGIN (Corrección del error de minúsculas)
-      - name: Log in to GitHub Container Registry
+      # 2. Autenticación en GitHub Container Registry
+      - name: Log in to GHCR
         if: success()
         uses: docker/login-action@v3
         with:
@@ -44,32 +45,16 @@ jobs:
           username: ${{ secrets.CR_USER }}
           password: ${{ secrets.CR_PAT }}
 
+      # 3. Construcción y Publicación de Imagen
+      # Aquí corregimos el error de "lowercase" dinámicamente
       - name: Build and Push Docker Image
         if: success()
         run: |
-          # Convertimos el nombre de usuario a minúsculas para cumplir con el estándar de Docker
-          IMAGE_ID=$(echo "ghcr.io/${{ secrets.CR_USER }}/optimizapp-backend" | tr '[:upper:]' '[:lower:]')
+          # Normalizamos el nombre del repo a minúsculas
+          LOWER_USER=$(echo "${{ secrets.CR_USER }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE_NAME="ghcr.io/$LOWER_USER/optimizapp-backend"
           
-          echo "Construyendo imagen: $IMAGE_ID:latest"
+          echo "Construyendo imagen: $IMAGE_NAME:latest"
           
-          docker build -t $IMAGE_ID:latest .
-          docker push $IMAGE_ID:latest
-
-      # 3. DESPLIEGUE A KUBERNETES 
-      - name: Set Kubernetes Context
-        if: success()
-        uses: azure/k8s-set-context@v3
-        with:
-          method: kubeconfig
-          kubeconfig: ${{ secrets.KUBECONFIG }}
-
-      - name: Deploy to Kubernetes
-        if: success()
-        uses: azure/k8s-deploy@v4
-        with:
-          # Si aún no tienes el secreto K8S_NAMESPACE, puedes poner el nombre fijo aquí temporalmente
-          namespace: ${{ secrets.K8S_NAMESPACE }} 
-          manifests: |
-            k8s/deployment.yaml
-          images: |
-            ghcr.io/diegofernzab/optimizapp-backend:latest
+          docker build -t $IMAGE_NAME:latest .
+          docker push $IMAGE_NAME:latest

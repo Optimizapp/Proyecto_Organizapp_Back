@@ -5,7 +5,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: organizapp-backend
-  namespace: grupo14 # Reemplazar por el asignado (ej: grupo-01)
+  namespace: grupo14
 spec:
   replicas: 2
   strategy:
