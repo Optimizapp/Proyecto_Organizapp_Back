@@ -1,6 +1,7 @@
 package co.javeriana.dw.organizapp.controller;
 
-import co.javeriana.dw.organizapp.entity.Company;
+import co.javeriana.dw.organizapp.dto.CompanyRequestDto;
+import co.javeriana.dw.organizapp.dto.CompanyResponseDto;
 import co.javeriana.dw.organizapp.service.CompanyService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,46 +23,46 @@ public class CompanyController {
     }
 
     /**
-     * Obtiene todas las empresas
-     * @return Lista de empresas
+     * Obtiene todas las empresas mapeadas a DTO de respuesta
+     * @return Lista de CompanyResponseDto
      */
     @GetMapping
-    public ResponseEntity<List<Company>> getAllCompanies() {
-        List<Company> companies = companyService.findAll();
+    public ResponseEntity<List<CompanyResponseDto>> getAllCompanies() {
+        List<CompanyResponseDto> companies = companyService.findAll();
         return new ResponseEntity<>(companies, HttpStatus.OK);
     }
 
     /**
-     * Obtiene una empresa por ID
+     * Obtiene una empresa por ID mapeada a DTO
      * @param id ID de la empresa
-     * @return Empresa encontrada
+     * @return CompanyResponseDto encontrada
      */
     @GetMapping("/{id}")
-    public ResponseEntity<Company> getCompanyById(@PathVariable Long id) {
-        Company company = companyService.findById(id);
+    public ResponseEntity<CompanyResponseDto> getCompanyById(@PathVariable Long id) {
+        CompanyResponseDto company = companyService.findById(id);
         return new ResponseEntity<>(company, HttpStatus.OK);
     }
 
     /**
-     * Crea una nueva empresa
-     * @param company Empresa a crear
-     * @return Empresa creada
+     * Crea una nueva empresa recibiendo un DTO de solicitud
+     * @param companyDto Datos de la empresa (DTO)
+     * @return CompanyResponseDto de la empresa creada
      */
     @PostMapping
-    public ResponseEntity<Company> createCompany(@Valid @RequestBody Company company) {
-        Company createdCompany = companyService.create(company);
+    public ResponseEntity<CompanyResponseDto> createCompany(@Valid @RequestBody CompanyRequestDto companyDto) {
+        CompanyResponseDto createdCompany = companyService.create(companyDto);
         return new ResponseEntity<>(createdCompany, HttpStatus.CREATED);
     }
 
     /**
-     * Actualiza una empresa existente
+     * Actualiza una empresa existente usando DTOs
      * @param id ID de la empresa a actualizar
-     * @param company Datos actualizados de la empresa
-     * @return Empresa actualizada
+     * @param companyDto Datos actualizados (DTO)
+     * @return CompanyResponseDto actualizada
      */
     @PutMapping("/{id}")
-    public ResponseEntity<Company> updateCompany(@PathVariable Long id, @Valid @RequestBody Company company) {
-        Company updatedCompany = companyService.update(id, company);
+    public ResponseEntity<CompanyResponseDto> updateCompany(@PathVariable Long id, @Valid @RequestBody CompanyRequestDto companyDto) {
+        CompanyResponseDto updatedCompany = companyService.update(id, companyDto);
         return new ResponseEntity<>(updatedCompany, HttpStatus.OK);
     }
 
