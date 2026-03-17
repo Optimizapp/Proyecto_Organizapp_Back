@@ -36,6 +36,7 @@ jobs:
     - name: Push Docker image
       run: docker push ghcr.io/${OWNER_LC}/proyecto_organizapp_back:latest
 
+
     - name: Print pushed image URL
       run: 'echo "Imagen publicada: ghcr.io/${OWNER_LC}/proyecto_organizapp_back:latest"'
 
