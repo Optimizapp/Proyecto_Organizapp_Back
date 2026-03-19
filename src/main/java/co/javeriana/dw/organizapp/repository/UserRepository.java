@@ -6,5 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
-    // Aquí podrías agregar métodos personalizados como findByEmail si fuera necesario
+
+    boolean existsByEmail(String email);
 }
