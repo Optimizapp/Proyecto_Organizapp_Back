@@ -37,7 +37,7 @@ public class GlobalExceptionHandler {
         exception.getBindingResult().getFieldErrors()
                 .forEach(error -> fieldErrors.put(error.getField(), error.getDefaultMessage()));
         
-        body.put("fields", fieldErrors);
+        body.put("fields", fieldErrors); 
 
         return ResponseEntity.badRequest().body(body);
     }
