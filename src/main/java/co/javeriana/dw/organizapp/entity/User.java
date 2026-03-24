@@ -10,9 +10,11 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -47,26 +49,54 @@ public class User {
     @Column(nullable = false, unique = true, length = 150)
     private String email;
 
-    @NotBlank(message = "El rol es obligatorio")
-    @Size(max = 50, message = "El rol no puede superar los 50 caracteres")
-    @Column(nullable = false, length = 50)
-    private String role;
-
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
+
+    @Size(max = 255, message = "La contraseña no puede superar los 255 caracteres")
+    @Column(name = "password_hash", length = 255)
+    private String contrasenaHash;
+
+    @Column(name = "activo", nullable = false)
+    private Boolean activo = true;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "role_id", nullable = false)
+    @NotNull(message = "El rol es obligatorio")
+    private Role rol;
 
     // Un usuario puede ser responsable/creador de muchos procesos.
     @ToString.Exclude
     @OneToMany(mappedBy = "user")
     private Set<Process> processes = new HashSet<>();
 
+    @ToString.Exclude
+    @OneToMany(mappedBy = "creadoPor")
+    private Set<ProcessVersion> versionesCreadas = new HashSet<>();
+
+    @ToString.Exclude
+    @OneToMany(mappedBy = "user")
+    private Set<Comment> comentarios = new HashSet<>();
+
     @PrePersist
     public void prePersist() {
         createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+
+        if (activo == null) {
+            activo = true;
+        }
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 
     public void addProcess(Process process) {
@@ -77,5 +107,25 @@ public class User {
     public void removeProcess(Process process) {
         processes.remove(process);
         process.setUser(null);
+    }
+
+    public void addCreatedVersion(ProcessVersion version) {
+        versionesCreadas.add(version);
+        version.setCreadoPor(this);
+    }
+
+    public void removeCreatedVersion(ProcessVersion version) {
+        versionesCreadas.remove(version);
+        version.setCreadoPor(null);
+    }
+
+    public void addComment(Comment comment) {
+        comentarios.add(comment);
+        comment.setUser(this);
+    }
+
+    public void removeComment(Comment comment) {
+        comentarios.remove(comment);
+        comment.setUser(null);
     }
 }
