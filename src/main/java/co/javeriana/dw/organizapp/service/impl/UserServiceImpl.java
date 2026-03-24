@@ -3,8 +3,10 @@ package co.javeriana.dw.organizapp.service.impl;
 import co.javeriana.dw.organizapp.dto.UserRequestDto;
 import co.javeriana.dw.organizapp.dto.UserResponseDto;
 import co.javeriana.dw.organizapp.entity.Company;
+import co.javeriana.dw.organizapp.entity.Role;
 import co.javeriana.dw.organizapp.entity.User;
 import co.javeriana.dw.organizapp.repository.CompanyRepository;
+import co.javeriana.dw.organizapp.repository.RoleRepository;
 import co.javeriana.dw.organizapp.repository.UserRepository;
 import co.javeriana.dw.organizapp.service.UserService;
 import org.modelmapper.ModelMapper;
@@ -19,13 +21,16 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final CompanyRepository companyRepository;
+    private final RoleRepository roleRepository;
     private final ModelMapper modelMapper;
 
-    public UserServiceImpl(UserRepository userRepository, 
-                           CompanyRepository companyRepository, 
+    public UserServiceImpl(UserRepository userRepository,
+                           CompanyRepository companyRepository,
+                           RoleRepository roleRepository,
                            ModelMapper modelMapper) {
         this.userRepository = userRepository;
         this.companyRepository = companyRepository;
+        this.roleRepository = roleRepository;
         this.modelMapper = modelMapper;
     }
 
@@ -48,15 +53,15 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public UserResponseDto create(UserRequestDto userDto) {
-        // 1. Validar que la empresa existe
         Company company = companyRepository.findById(userDto.getCompanyId())
                 .orElseThrow(() -> new RuntimeException("La empresa especificada no existe"));
+        Role role = roleRepository.findById(userDto.getRoleId())
+                .orElseThrow(() -> new RuntimeException("El rol especificado no existe"));
 
-        // 2. Mapear DTO a Entidad
         User user = modelMapper.map(userDto, User.class);
-        user.setCompany(company); // Seteamos la relación manualmente
+        user.setCompany(company);
+        user.setRol(role);
 
-        // 3. Guardar y retornar
         User savedUser = userRepository.save(user);
         return convertToDto(savedUser);
     }
@@ -66,15 +71,16 @@ public class UserServiceImpl implements UserService {
     public UserResponseDto update(Long id, UserRequestDto userDto) {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        
+
         Company company = companyRepository.findById(userDto.getCompanyId())
                 .orElseThrow(() -> new RuntimeException("La empresa no existe"));
+        Role role = roleRepository.findById(userDto.getRoleId())
+                .orElseThrow(() -> new RuntimeException("El rol no existe"));
 
-        // Actualizamos los campos
         existingUser.setName(userDto.getName());
         existingUser.setEmail(userDto.getEmail());
-        existingUser.setRole(userDto.getRole());
         existingUser.setCompany(company);
+        existingUser.setRol(role);
 
         return convertToDto(userRepository.save(existingUser));
     }
@@ -88,10 +94,11 @@ public class UserServiceImpl implements UserService {
         userRepository.deleteById(id);
     }
 
-    // Método privado para centralizar el mapeo de salida
     private UserResponseDto convertToDto(User user) {
         UserResponseDto dto = modelMapper.map(user, UserResponseDto.class);
-        dto.setCompanyId(user.getCompany().getId()); // Aseguramos que solo vaya el ID
+        dto.setCompanyId(user.getCompany().getId());
+        dto.setRoleId(user.getRol().getId());
+        dto.setRoleNombre(user.getRol().getNombre());
         return dto;
     }
 }
