@@ -3,73 +3,56 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: organizapp-backend
-  namespace: grupo14
+name: organizapp-backend
+namespace: grupo14
 spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: organizapp-backend
-  template:
-    metadata:
-      labels:
-        app: organizapp-backend
-    spec:
-      imagePullSecrets:
-      - name: ghcr-secret
-      containers:
-      - name: organizapp-backend
+replicas: 2
+selector:
+matchLabels:
+app: organizapp-backend
+template:
+metadata:
+labels:
+app: organizapp-backend
+spec:
+imagePullSecrets:
+- name: ghcr-secret
+containers:
+- name: organizapp-backend
+        image: ghcr.io/diegofernzab/proyecto_organizapp_back:latest
         image: ghcr.io/optimizapp/proyecto_organizapp_back:latest
-        ports:
-        - containerPort: 8080
-        env:
-        - name: SPRING_PROFILES_ACTIVE
-          value: "prod"
-        - name: DB_URL
-          valueFrom:
-            secretKeyRef:
-              name: organizapp-db-secret
-              key: DB_URL
-        - name: DB_USER
-          valueFrom:
-            secretKeyRef:
-              name: organizapp-db-secret
-              key: DB_USER
-        - name: DB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: organizapp-db-secret
-              key: DB_PASSWORD
+ports:
+- containerPort: 8080
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: organizapp-backend
-  namespace: grupo14
-  
+name: organizapp-backend
+namespace: grupo14
+
 spec:
-  selector:
-    app: organizapp-backend
-  ports:
-    - protocol: TCP
-      port: 8080
-      targetPort: 8080
+selector:
+app: organizapp-backend
+ports:
+- protocol: TCP
+port: 8080
+targetPort: 8080
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-   name: organizapp-backend
-   namespace: grupo14
+name: organizapp-backend
+namespace: grupo14
 spec:
-   ingressClassName: public
-   rules:
-   - host: grupox.inphotech.co
-     http:
-       paths:
-       - path: /
-         pathType: Prefix
-         backend:
-           service:
-             name: organizapp-backend
-             port:
-               number: 8080
+ingressClassName: public
+rules:
+- host: grupox.inphotech.co
+http:
+paths:
+- path: /
+pathType: Prefix
+backend:
+service:
+name: organizapp-backend
+port:
+number: 8080
