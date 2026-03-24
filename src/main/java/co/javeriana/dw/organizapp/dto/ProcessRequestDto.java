@@ -1,0 +1,23 @@
+package co.javeriana.dw.organizapp.dto;
+
+
+import lombok.Data;
+import jakarta.validation.constraints.*;
+
+@Data
+public class ProcessRequestDto {
+    @NotBlank(message = "El nombre es obligatorio")
+    private String name;
+    
+    @Size(max = 1000)
+    private String description;
+    
+    @NotNull(message = "El estado es obligatorio")
+    private String status; // Se recibe como String y se valida/convierte en el Service
+    
+    @NotNull(message = "El ID de la empresa es obligatorio")
+    private Long companyId;
+    
+    @NotNull(message = "El ID del usuario responsable es obligatorio")
+    private Long userId;
+}
