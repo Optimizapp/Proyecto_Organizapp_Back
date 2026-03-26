@@ -15,7 +15,7 @@ metadata:
 type: Opaque
 stringData:
   DB_USER: grupo14_user
-  DB_PASSWORD: REEMPLAZA_ESTA_VARIABLE
+  DB_PASSWORD: G14!zP8$Lq3@Rt6#Wx2K
 ---
 apiVersion: apps/v1
 kind: Deployment
