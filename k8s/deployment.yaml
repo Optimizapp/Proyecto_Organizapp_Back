@@ -1,4 +1,22 @@
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend
+  namespace: grupo14
+data:
+  DB_URL: jdbc:postgresql://190.146.2.119:2345/grupo14
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backend-secret
+  namespace: grupo14
+type: Opaque
+stringData:
+  DB_USER: grupo14_user
+  DB_PASSWORD: REEMPLAZA_ESTA_VARIABLE
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -21,9 +39,6 @@ spec:
         image: ghcr.io/optimizapp/proyecto_organizapp_back:latest
         ports:
         - containerPort: 8080
-        envFrom:
-        - configMapRef:
-            name: backend
         env:
         - name: SPRING_PROFILES_ACTIVE
           value: prod
@@ -32,6 +47,16 @@ spec:
             configMapKeyRef:
               name: backend
               key: DB_URL
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: DB_USER
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: DB_PASSWORD
 ---
 apiVersion: v1
 kind: Service
