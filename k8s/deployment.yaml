@@ -24,6 +24,14 @@ spec:
         envFrom:
         - configMapRef:
             name: backend
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: prod
+        - name: DB_URL
+          valueFrom:
+            configMapKeyRef:
+              name: backend
+              key: DB_URL
 ---
 apiVersion: v1
 kind: Service
