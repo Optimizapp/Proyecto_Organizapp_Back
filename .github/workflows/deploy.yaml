@@ -70,7 +70,25 @@ jobs:
       run: sudo microk8s kubectl rollout status deployment/organizapp-backend -n grupo14 --timeout=180s
 
     - name: Show deployed resources
+      if: always()
       run: sudo microk8s kubectl get all -n grupo14
 
-    - name: Show pod logs
-      run: sudo microk8s kubectl logs -l app=organizapp-backend -n grupo14 --tail=100 --prefix=true || true
+    - name: Describe pods
+      if: always()
+      run: sudo microk8s kubectl describe pods -n grupo14
+
+    - name: Show current pod logs
+      if: always()
+      run: |
+        for pod in $(sudo microk8s kubectl get pods -n grupo14 -l app=organizapp-backend -o jsonpath='{.items[*].metadata.name}'); do
+          echo "===== Current logs for $pod ====="
+          sudo microk8s kubectl logs "$pod" -n grupo14 --tail=100 || true
+        done
+
+    - name: Show previous pod logs
+      if: always()
+      run: |
+        for pod in $(sudo microk8s kubectl get pods -n grupo14 -l app=organizapp-backend -o jsonpath='{.items[*].metadata.name}'); do
+          echo "===== Previous logs for $pod ====="
+          sudo microk8s kubectl logs "$pod" -n grupo14 --previous --tail=100 || true
+        done
