@@ -71,3 +71,6 @@ jobs:
 
     - name: Show deployed resources
       run: sudo microk8s kubectl get all -n grupo14
+
+    - name: Show pod logs
+      run: sudo microk8s kubectl logs -l app=organizapp-backend -n grupo14 --tail=100 --prefix=true || true
