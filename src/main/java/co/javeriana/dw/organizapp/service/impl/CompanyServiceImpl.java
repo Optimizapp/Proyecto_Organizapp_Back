@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class CompanyServiceImpl implements CompanyService {
@@ -30,7 +29,7 @@ public class CompanyServiceImpl implements CompanyService {
     public List<CompanyResponseDto> findAll() {
         return companyRepository.findAll().stream()
                 .map(company -> modelMapper.map(company, CompanyResponseDto.class))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
