@@ -11,7 +11,6 @@ import co.javeriana.dw.organizapp.repository.NodeRepository;
 import co.javeriana.dw.organizapp.repository.ProcessVersionRepository;
 import co.javeriana.dw.organizapp.service.FlowService;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,7 +39,7 @@ public class FlowServiceImpl implements FlowService {
     public List<FlowResponseDto> findAll() {
         return flowRepository.findAll().stream()
                 .map(this::toDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -49,7 +48,7 @@ public class FlowServiceImpl implements FlowService {
         findVersion(versionId);
         return flowRepository.findByVersionId(versionId).stream()
                 .map(this::toDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
