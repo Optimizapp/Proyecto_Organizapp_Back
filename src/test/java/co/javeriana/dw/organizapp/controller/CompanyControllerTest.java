@@ -3,14 +3,16 @@ package co.javeriana.dw.organizapp.controller;
 import co.javeriana.dw.organizapp.dto.CompanyRequestDto;
 import co.javeriana.dw.organizapp.dto.CompanyResponseDto;
 import co.javeriana.dw.organizapp.service.CompanyService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import co.javeriana.dw.thymeleaf.ThymeleafApplication;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.Arrays;
 import java.util.List;
@@ -23,13 +25,14 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(CompanyController.class)
+@SpringBootTest(classes = ThymeleafApplication.class)
+@AutoConfigureMockMvc
 class CompanyControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private CompanyService companyService;
 
     @Autowired
