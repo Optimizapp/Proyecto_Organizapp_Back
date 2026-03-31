@@ -2,7 +2,7 @@ name: Build and Deploy with MicroK8s
 
 on:
   push:
-    branches: [main]
+    branches: [Dev]
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
