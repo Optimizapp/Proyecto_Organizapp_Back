@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class FlowServiceImpl implements FlowService {
 
+    private static final String FLOW_NOT_FOUND_MESSAGE = "Flujo no encontrado con ID: ";
+
     private final FlowRepository flowRepository;
     private final ProcessVersionRepository processVersionRepository;
     private final NodeRepository nodeRepository;
@@ -55,7 +57,7 @@ public class FlowServiceImpl implements FlowService {
     @Transactional(readOnly = true)
     public FlowResponseDto findById(Long id) {
         Flow flow = flowRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Flujo no encontrado con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(FLOW_NOT_FOUND_MESSAGE + id));
         return toDto(flow);
     }
 
@@ -79,7 +81,7 @@ public class FlowServiceImpl implements FlowService {
     @Transactional
     public FlowResponseDto update(Long id, FlowRequestDto flowDto) {
         Flow existingFlow = flowRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Flujo no encontrado con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(FLOW_NOT_FOUND_MESSAGE + id));
         ProcessVersion version = findVersion(flowDto.getVersionId());
         Node originNode = findNode(flowDto.getOriginNodeId());
         Node destinationNode = findNode(flowDto.getDestinationNodeId());
@@ -98,7 +100,7 @@ public class FlowServiceImpl implements FlowService {
     @Transactional
     public void delete(Long id) {
         Flow flow = flowRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Flujo no encontrado con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(FLOW_NOT_FOUND_MESSAGE + id));
         flowRepository.delete(flow);
     }
 
