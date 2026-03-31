@@ -9,13 +9,15 @@ import co.javeriana.dw.organizapp.repository.ProcessRepository;
 import co.javeriana.dw.organizapp.repository.RoleRepository;
 import co.javeriana.dw.organizapp.service.RoleService;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class RoleServiceImpl implements RoleService {
+
+    private static final String PROCESS_NOT_FOUND_MESSAGE = "Proceso no encontrado con ID: ";
+    private static final String ROLE_NOT_FOUND_MESSAGE = "Rol no encontrado con ID: ";
 
     private final RoleRepository roleRepository;
     private final ProcessRepository processRepository;
@@ -32,24 +34,24 @@ public class RoleServiceImpl implements RoleService {
     public List<RoleResponseDto> findAll() {
         return roleRepository.findAll().stream()
                 .map(this::toDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<RoleResponseDto> findByProcessId(Long processId) {
         processRepository.findById(processId)
-                .orElseThrow(() -> new ResourceNotFoundException("Proceso no encontrado con ID: " + processId));
+                .orElseThrow(() -> new ResourceNotFoundException(PROCESS_NOT_FOUND_MESSAGE + processId));
         return roleRepository.findByProcesoId(processId).stream()
                 .map(this::toDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public RoleResponseDto findById(Long id) {
         Role role = roleRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Rol no encontrado con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ROLE_NOT_FOUND_MESSAGE + id));
         return toDto(role);
     }
 
@@ -57,7 +59,7 @@ public class RoleServiceImpl implements RoleService {
     @Transactional
     public RoleResponseDto create(RoleRequestDto roleDto) {
         Process process = processRepository.findById(roleDto.getProcessId())
-                .orElseThrow(() -> new ResourceNotFoundException("Proceso no encontrado con ID: " + roleDto.getProcessId()));
+                .orElseThrow(() -> new ResourceNotFoundException(PROCESS_NOT_FOUND_MESSAGE + roleDto.getProcessId()));
 
         Role role = modelMapper.map(roleDto, Role.class);
         role.setProceso(process);
@@ -69,9 +71,9 @@ public class RoleServiceImpl implements RoleService {
     @Transactional
     public RoleResponseDto update(Long id, RoleRequestDto roleDto) {
         Role existingRole = roleRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Rol no encontrado con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ROLE_NOT_FOUND_MESSAGE + id));
         Process process = processRepository.findById(roleDto.getProcessId())
-                .orElseThrow(() -> new ResourceNotFoundException("Proceso no encontrado con ID: " + roleDto.getProcessId()));
+                .orElseThrow(() -> new ResourceNotFoundException(PROCESS_NOT_FOUND_MESSAGE + roleDto.getProcessId()));
 
         existingRole.setNombre(roleDto.getNombre());
         existingRole.setDescripcion(roleDto.getDescripcion());
@@ -84,7 +86,7 @@ public class RoleServiceImpl implements RoleService {
     @Transactional
     public void delete(Long id) {
         Role role = roleRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Rol no encontrado con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ROLE_NOT_FOUND_MESSAGE + id));
         roleRepository.delete(role);
     }
 
