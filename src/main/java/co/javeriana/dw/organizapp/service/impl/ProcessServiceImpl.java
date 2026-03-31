@@ -6,30 +6,34 @@ import co.javeriana.dw.organizapp.entity.Company;
 import co.javeriana.dw.organizapp.entity.Process;
 import co.javeriana.dw.organizapp.entity.ProcessStatus;
 import co.javeriana.dw.organizapp.entity.User;
+import co.javeriana.dw.organizapp.exception.InvalidRequestException;
 import co.javeriana.dw.organizapp.exception.ResourceNotFoundException;
 import co.javeriana.dw.organizapp.repository.CompanyRepository;
 import co.javeriana.dw.organizapp.repository.ProcessRepository;
 import co.javeriana.dw.organizapp.repository.UserRepository;
 import co.javeriana.dw.organizapp.service.ProcessService;
+import java.util.List;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 @Service
 public class ProcessServiceImpl implements ProcessService {
+
+    private static final String PROCESS_NOT_FOUND_MESSAGE = "Proceso no encontrado con ID: ";
+    private static final String COMPANY_NOT_FOUND_MESSAGE = "Empresa no encontrada con ID: ";
+    private static final String USER_NOT_FOUND_MESSAGE = "Usuario no encontrado con ID: ";
 
     private final ProcessRepository processRepository;
     private final CompanyRepository companyRepository;
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
 
-    public ProcessServiceImpl(ProcessRepository processRepository, 
-                              CompanyRepository companyRepository, 
-                              UserRepository userRepository, 
-                              ModelMapper modelMapper) {
+    public ProcessServiceImpl(
+            ProcessRepository processRepository,
+            CompanyRepository companyRepository,
+            UserRepository userRepository,
+            ModelMapper modelMapper) {
         this.processRepository = processRepository;
         this.companyRepository = companyRepository;
         this.userRepository = userRepository;
@@ -41,29 +45,22 @@ public class ProcessServiceImpl implements ProcessService {
     public List<ProcessResponseDto> findAll() {
         return processRepository.findAll().stream()
                 .map(this::convertToDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public ProcessResponseDto findById(Long id) {
-        Process process = processRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Proceso no encontrado con ID: " + id));
-        return convertToDto(process);
+        return convertToDto(findExistingProcess(id));
     }
 
     @Override
     @Transactional
     public ProcessResponseDto create(ProcessRequestDto processDto) {
-        // Validamos existencia de dependencias
-        Company company = companyRepository.findById(processDto.getCompanyId())
-                .orElseThrow(() -> new ResourceNotFoundException("Empresa no encontrada"));
-        User user = userRepository.findById(processDto.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario responsable no encontrado"));
+        Company company = findCompany(processDto.getCompanyId());
+        User user = findUser(processDto.getUserId());
 
         Process process = modelMapper.map(processDto, Process.class);
-        
-        // Seteamos relaciones y estado manualmente para asegurar integridad
         process.setCompany(company);
         process.setUser(user);
         process.setStatus(parseStatus(processDto.getStatus()));
@@ -74,15 +71,10 @@ public class ProcessServiceImpl implements ProcessService {
     @Override
     @Transactional
     public ProcessResponseDto update(Long id, ProcessRequestDto processDto) {
-        Process existingProcess = processRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Proceso no encontrado"));
+        Process existingProcess = findExistingProcess(id);
+        Company company = findCompany(processDto.getCompanyId());
+        User user = findUser(processDto.getUserId());
 
-        Company company = companyRepository.findById(processDto.getCompanyId())
-                .orElseThrow(() -> new ResourceNotFoundException("Empresa no encontrada"));
-        User user = userRepository.findById(processDto.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
-
-        // Actualización manual de campos para evitar sobreescribir createdAt
         existingProcess.setName(processDto.getName());
         existingProcess.setDescription(processDto.getDescription());
         existingProcess.setStatus(parseStatus(processDto.getStatus()));
@@ -95,13 +87,12 @@ public class ProcessServiceImpl implements ProcessService {
     @Override
     @Transactional
     public void delete(Long id) {
-        if (!processRepository.existsById(id)) {
-            throw new ResourceNotFoundException("No se puede eliminar: Proceso no encontrado");
+        Process process = findExistingProcess(id);
+        if (process.getStatus() != ProcessStatus.INACTIVE) {
+            process.setStatus(ProcessStatus.INACTIVE);
+            processRepository.save(process);
         }
-        processRepository.deleteById(id);
     }
-
-    // --- Métodos Privados de Apoyo ---
 
     private ProcessResponseDto convertToDto(Process process) {
         ProcessResponseDto dto = modelMapper.map(process, ProcessResponseDto.class);
@@ -114,9 +105,23 @@ public class ProcessServiceImpl implements ProcessService {
     private ProcessStatus parseStatus(String statusStr) {
         try {
             return ProcessStatus.valueOf(statusStr.toUpperCase());
-        } catch (IllegalArgumentException | NullPointerException e) {
-            // Si el estado enviado no existe en el Enum, usamos el valor por defecto
-            return ProcessStatus.DRAFT;
+        } catch (IllegalArgumentException | NullPointerException exception) {
+            throw new InvalidRequestException("Estado de proceso invalido: " + statusStr);
         }
+    }
+
+    private Process findExistingProcess(Long id) {
+        return processRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(PROCESS_NOT_FOUND_MESSAGE + id));
+    }
+
+    private Company findCompany(Long companyId) {
+        return companyRepository.findById(companyId)
+                .orElseThrow(() -> new ResourceNotFoundException(COMPANY_NOT_FOUND_MESSAGE + companyId));
+    }
+
+    private User findUser(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_MESSAGE + userId));
     }
 }

@@ -4,6 +4,7 @@ import co.javeriana.dw.organizapp.dto.RoleRequestDto;
 import co.javeriana.dw.organizapp.dto.RoleResponseDto;
 import co.javeriana.dw.organizapp.entity.Process;
 import co.javeriana.dw.organizapp.entity.Role;
+import co.javeriana.dw.organizapp.exception.ResourceInUseException;
 import co.javeriana.dw.organizapp.exception.ResourceNotFoundException;
 import co.javeriana.dw.organizapp.repository.ProcessRepository;
 import co.javeriana.dw.organizapp.repository.RoleRepository;
@@ -40,8 +41,7 @@ public class RoleServiceImpl implements RoleService {
     @Override
     @Transactional(readOnly = true)
     public List<RoleResponseDto> findByProcessId(Long processId) {
-        processRepository.findById(processId)
-                .orElseThrow(() -> new ResourceNotFoundException(PROCESS_NOT_FOUND_MESSAGE + processId));
+        findProcess(processId);
         return roleRepository.findByProcesoId(processId).stream()
                 .map(this::toDto)
                 .toList();
@@ -50,16 +50,13 @@ public class RoleServiceImpl implements RoleService {
     @Override
     @Transactional(readOnly = true)
     public RoleResponseDto findById(Long id) {
-        Role role = roleRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(ROLE_NOT_FOUND_MESSAGE + id));
-        return toDto(role);
+        return toDto(findRole(id));
     }
 
     @Override
     @Transactional
     public RoleResponseDto create(RoleRequestDto roleDto) {
-        Process process = processRepository.findById(roleDto.getProcessId())
-                .orElseThrow(() -> new ResourceNotFoundException(PROCESS_NOT_FOUND_MESSAGE + roleDto.getProcessId()));
+        Process process = findProcess(roleDto.getProcessId());
 
         Role role = modelMapper.map(roleDto, Role.class);
         role.setProceso(process);
@@ -70,10 +67,8 @@ public class RoleServiceImpl implements RoleService {
     @Override
     @Transactional
     public RoleResponseDto update(Long id, RoleRequestDto roleDto) {
-        Role existingRole = roleRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(ROLE_NOT_FOUND_MESSAGE + id));
-        Process process = processRepository.findById(roleDto.getProcessId())
-                .orElseThrow(() -> new ResourceNotFoundException(PROCESS_NOT_FOUND_MESSAGE + roleDto.getProcessId()));
+        Role existingRole = findRole(id);
+        Process process = findProcess(roleDto.getProcessId());
 
         existingRole.setNombre(roleDto.getNombre());
         existingRole.setDescripcion(roleDto.getDescripcion());
@@ -85,8 +80,10 @@ public class RoleServiceImpl implements RoleService {
     @Override
     @Transactional
     public void delete(Long id) {
-        Role role = roleRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(ROLE_NOT_FOUND_MESSAGE + id));
+        Role role = findRole(id);
+        if (!role.getUsuarios().isEmpty()) {
+            throw new ResourceInUseException("No se puede eliminar el rol porque tiene usuarios asociados");
+        }
         roleRepository.delete(role);
     }
 
@@ -94,5 +91,15 @@ public class RoleServiceImpl implements RoleService {
         RoleResponseDto dto = modelMapper.map(role, RoleResponseDto.class);
         dto.setProcessId(role.getProceso().getId());
         return dto;
+    }
+
+    private Process findProcess(Long processId) {
+        return processRepository.findById(processId)
+                .orElseThrow(() -> new ResourceNotFoundException(PROCESS_NOT_FOUND_MESSAGE + processId));
+    }
+
+    private Role findRole(Long roleId) {
+        return roleRepository.findById(roleId)
+                .orElseThrow(() -> new ResourceNotFoundException(ROLE_NOT_FOUND_MESSAGE + roleId));
     }
 }
