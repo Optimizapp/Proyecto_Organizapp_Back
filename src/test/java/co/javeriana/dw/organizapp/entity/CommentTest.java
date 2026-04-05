@@ -25,9 +25,9 @@ class CommentTest {
     @Test
     void shouldCreateValidComment() {
         Comment comment = new Comment();
-        comment.setVersion(new ProcessVersion()); // mock básico
-        comment.setUser(new User());              // mock básico
-        comment.setContenido("Este es un comentario válido");
+        comment.setVersion(new ProcessVersion()); 
+        comment.setUser(new User());              
+        comment.setContenido("yo no debo pizza");
 
         Set<ConstraintViolation<Comment>> violations = validator.validate(comment);
 
