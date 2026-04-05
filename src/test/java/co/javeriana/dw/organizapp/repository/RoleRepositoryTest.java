@@ -3,7 +3,6 @@ package co.javeriana.dw.organizapp.repository;
 import co.javeriana.dw.organizapp.entity.*;
 import co.javeriana.dw.organizapp.entity.Process;
 import co.javeriana.dw.thymeleaf.ThymeleafApplication;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
