@@ -11,13 +11,14 @@ import co.javeriana.dw.organizapp.repository.ProcessVersionRepository;
 import co.javeriana.dw.organizapp.repository.UserRepository;
 import co.javeriana.dw.organizapp.service.CommentService;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CommentServiceImpl implements CommentService {
+
+    private static final String COMMENT_NOT_FOUND_MESSAGE = "Comentario no encontrado con ID: ";
 
     private final CommentRepository commentRepository;
     private final ProcessVersionRepository processVersionRepository;
@@ -40,7 +41,7 @@ public class CommentServiceImpl implements CommentService {
     public List<CommentResponseDto> findAll() {
         return commentRepository.findAll().stream()
                 .map(this::toDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -49,14 +50,14 @@ public class CommentServiceImpl implements CommentService {
         findVersion(versionId);
         return commentRepository.findByVersionId(versionId).stream()
                 .map(this::toDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public CommentResponseDto findById(Long id) {
         Comment comment = commentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Comentario no encontrado con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(COMMENT_NOT_FOUND_MESSAGE + id));
         return toDto(comment);
     }
 
@@ -77,7 +78,7 @@ public class CommentServiceImpl implements CommentService {
     @Transactional
     public CommentResponseDto update(Long id, CommentRequestDto commentDto) {
         Comment existingComment = commentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Comentario no encontrado con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(COMMENT_NOT_FOUND_MESSAGE + id));
         ProcessVersion version = findVersion(commentDto.getVersionId());
         User user = findUser(commentDto.getUserId());
 
@@ -92,7 +93,7 @@ public class CommentServiceImpl implements CommentService {
     @Transactional
     public void delete(Long id) {
         Comment comment = commentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Comentario no encontrado con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(COMMENT_NOT_FOUND_MESSAGE + id));
         commentRepository.delete(comment);
     }
 

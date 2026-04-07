@@ -12,13 +12,14 @@ import co.javeriana.dw.organizapp.repository.ProcessVersionRepository;
 import co.javeriana.dw.organizapp.repository.UserRepository;
 import co.javeriana.dw.organizapp.service.ProcessVersionService;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ProcessVersionServiceImpl implements ProcessVersionService {
+
+    private static final String PROCESS_VERSION_NOT_FOUND_MESSAGE = "Version de proceso no encontrada con ID: ";
 
     private final ProcessVersionRepository processVersionRepository;
     private final ProcessRepository processRepository;
@@ -41,7 +42,7 @@ public class ProcessVersionServiceImpl implements ProcessVersionService {
     public List<ProcessVersionResponseDto> findAll() {
         return processVersionRepository.findAll().stream()
                 .map(this::toDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -51,14 +52,14 @@ public class ProcessVersionServiceImpl implements ProcessVersionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Proceso no encontrado con ID: " + processId));
         return processVersionRepository.findByProcesoId(processId).stream()
                 .map(this::toDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public ProcessVersionResponseDto findById(Long id) {
         ProcessVersion processVersion = processVersionRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Version de proceso no encontrada con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(PROCESS_VERSION_NOT_FOUND_MESSAGE + id));
         return toDto(processVersion);
     }
 
@@ -80,7 +81,7 @@ public class ProcessVersionServiceImpl implements ProcessVersionService {
     @Transactional
     public ProcessVersionResponseDto update(Long id, ProcessVersionRequestDto processVersionDto) {
         ProcessVersion existingProcessVersion = processVersionRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Version de proceso no encontrada con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(PROCESS_VERSION_NOT_FOUND_MESSAGE + id));
         Process process = findProcess(processVersionDto.getProcessId());
         User createdBy = findUser(processVersionDto.getCreatedByUserId());
 
@@ -96,7 +97,7 @@ public class ProcessVersionServiceImpl implements ProcessVersionService {
     @Transactional
     public void delete(Long id) {
         ProcessVersion processVersion = processVersionRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Version de proceso no encontrada con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(PROCESS_VERSION_NOT_FOUND_MESSAGE + id));
         processVersionRepository.delete(processVersion);
     }
 

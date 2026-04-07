@@ -10,13 +10,14 @@ import co.javeriana.dw.organizapp.repository.NodeRepository;
 import co.javeriana.dw.organizapp.repository.ProcessVersionRepository;
 import co.javeriana.dw.organizapp.service.NodeService;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class NodeServiceImpl implements NodeService {
+
+    private static final String NODE_NOT_FOUND_MESSAGE = "Nodo no encontrado con ID: ";
 
     private final NodeRepository nodeRepository;
     private final ProcessVersionRepository processVersionRepository;
@@ -36,7 +37,7 @@ public class NodeServiceImpl implements NodeService {
     public List<NodeResponseDto> findAll() {
         return nodeRepository.findAll().stream()
                 .map(this::toDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -45,14 +46,14 @@ public class NodeServiceImpl implements NodeService {
         findVersion(versionId);
         return nodeRepository.findByVersionId(versionId).stream()
                 .map(this::toDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public NodeResponseDto findById(Long id) {
         Node node = nodeRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Nodo no encontrado con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(NODE_NOT_FOUND_MESSAGE + id));
         return toDto(node);
     }
 
@@ -72,7 +73,7 @@ public class NodeServiceImpl implements NodeService {
     @Transactional
     public NodeResponseDto update(Long id, NodeRequestDto nodeDto) {
         Node existingNode = nodeRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Nodo no encontrado con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(NODE_NOT_FOUND_MESSAGE + id));
         ProcessVersion version = findVersion(nodeDto.getVersionId());
 
         existingNode.setVersion(version);
@@ -89,7 +90,7 @@ public class NodeServiceImpl implements NodeService {
     @Transactional
     public void delete(Long id) {
         Node node = nodeRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Nodo no encontrado con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(NODE_NOT_FOUND_MESSAGE + id));
         nodeRepository.delete(node);
     }
 

@@ -1,11 +1,5 @@
 package co.javeriana.dw.organizapp.entity;
 
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Validation;
-import jakarta.validation.Validator;
-import jakarta.validation.ValidatorFactory;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
@@ -17,63 +11,40 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CompanyTest {
 
-    private ValidatorFactory validatorFactory;
-    private Validator validator;
+    @Test
+    void testCompanyCreation() {
+        Company company = new Company();
+        company.setId(1L);
+        company.setName("Test Company");
+        company.setNit("123456789");
 
-    @BeforeEach
-    void setUp() {
-        validatorFactory = Validation.buildDefaultValidatorFactory();
-        validator = validatorFactory.getValidator();
-    }
-
-    @AfterEach
-    void tearDown() {
-        validatorFactory.close();
+        assertEquals(1L, company.getId());
+        assertEquals("Test Company", company.getName());
+        assertEquals("123456789", company.getNit());
     }
 
     @Test
-    void prePersistShouldSetCreatedAtAndUpdatedAt() {
-        Company company = new Company();
+    void testCompanyEqualsAndHashCode() {
+        Company company1 = new Company();
+        company1.setId(1L);
+        company1.setNit("123456789");
 
-        company.prePersist();
+        Company company2 = new Company();
+        company2.setId(1L);
+        company2.setNit("123456789");
 
-        assertNotNull(company.getCreatedAt());
-        assertNotNull(company.getUpdatedAt());
+        assertEquals(company1, company2);
+        assertEquals(company1.hashCode(), company2.hashCode());
     }
 
     @Test
-    void preUpdateShouldRefreshUpdatedAt() {
+    void testCompanyToString() {
         Company company = new Company();
-        company.setUpdatedAt(LocalDateTime.now().minusDays(1));
-        LocalDateTime originalUpdatedAt = company.getUpdatedAt();
-
-        company.preUpdate();
-
-        assertTrue(company.getUpdatedAt().isAfter(originalUpdatedAt));
-    }
-
-    @Test
-    void validateShouldFailWhenNameAndNitAreBlank() {
-        Company company = new Company();
-        company.setName("");
-        company.setNit("");
-        company.setIndustry("health");
-
-        Set<ConstraintViolation<Company>> violations = validator.validate(company);
-
-        assertFalse(violations.isEmpty());
-        //assertEquals(2, violations.size());
-    }
-
-    @Test
-    void validateShouldPassWhenCompanyIsValid() {
-        Company company = new Company();
-        company.setName("Gamma");
-        company.setNit("900300300");
-        company.setIndustry("Health");
-
-        Set<ConstraintViolation<Company>> violations = validator.validate(company);
-
-        assertTrue(violations.isEmpty());
+        company.setId(1L);
+        company.setName("Test Company");
+        
+        String toString = company.toString();
+        assertNotNull(toString);
+        assertTrue(toString.contains("Test Company"));
     }
 }

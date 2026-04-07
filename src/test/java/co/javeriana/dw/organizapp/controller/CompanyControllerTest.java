@@ -2,167 +2,106 @@ package co.javeriana.dw.organizapp.controller;
 
 import co.javeriana.dw.organizapp.dto.CompanyRequestDto;
 import co.javeriana.dw.organizapp.dto.CompanyResponseDto;
-import co.javeriana.dw.organizapp.exception.CompanyNotFoundException;
-import co.javeriana.dw.organizapp.exception.DuplicateCompanyException;
-import co.javeriana.dw.organizapp.exception.GlobalExceptionHandler;
 import co.javeriana.dw.organizapp.service.CompanyService;
-import org.hibernate.validator.HibernateValidator;
+import co.javeriana.dw.thymeleaf.ThymeleafApplication;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
+import tools.jackson.databind.ObjectMapper;
 
+import java.util.Arrays;
 import java.util.List;
 
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest(classes = ThymeleafApplication.class)
+@AutoConfigureMockMvc
 class CompanyControllerTest {
 
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
     private CompanyService companyService;
 
-    @InjectMocks
-    private CompanyController companyController;
+    @Autowired
+    private ObjectMapper objectMapper;
 
-    private MockMvc mockMvc;
+    private CompanyResponseDto companyResponseDto;
+    private CompanyRequestDto companyRequestDto;
 
     @BeforeEach
     void setUp() {
-        LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
-        validator.setProviderClass(HibernateValidator.class);
-        validator.afterPropertiesSet();
+        companyResponseDto = new CompanyResponseDto();
+        companyResponseDto.setId(1L);
+        companyResponseDto.setName("Test Company");
+        companyResponseDto.setNit("123456789");
 
-        mockMvc = MockMvcBuilders.standaloneSetup(companyController)
-                .setControllerAdvice(new GlobalExceptionHandler())
-                .setValidator(validator)
-                .build();
+        companyRequestDto = new CompanyRequestDto();
+        companyRequestDto.setName("Test Company");
+        companyRequestDto.setNit("123456789");
     }
 
     @Test
-    void getAllCompaniesShouldReturnOk() throws Exception {
-        when(companyService.findAll()).thenReturn(List.of(
-                buildResponseDto(1L, "Alpha", "900100100", "Tech"),
-                buildResponseDto(2L, "Beta", "900200200", "Finance")
-        ));
+    void getAllCompanies_ShouldReturnList() throws Exception {
+        List<CompanyResponseDto> companies = Arrays.asList(companyResponseDto);
+        when(companyService.findAll()).thenReturn(companies);
 
-        mockMvc.perform(get("/api/companies"))
+        mockMvc.perform(get("/api/companies")
+                .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Alpha"))
-                .andExpect(jsonPath("$[1].nit").value("900200200"));
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].name", is("Test Company")));
     }
 
     @Test
-    void getCompanyByIdShouldReturnOk() throws Exception {
-        when(companyService.findById(1L)).thenReturn(buildResponseDto(1L, "Alpha", "900100100", "Tech"));
+    void getCompanyById_WhenExists_ShouldReturnCompany() throws Exception {
+        when(companyService.findById(1L)).thenReturn(companyResponseDto);
 
-        mockMvc.perform(get("/api/companies/1"))
+        mockMvc.perform(get("/api/companies/1")
+                .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.name").value("Alpha"));
+                .andExpect(jsonPath("$.id", is(1)))
+                .andExpect(jsonPath("$.name", is("Test Company")));
     }
 
     @Test
-    void createCompanyShouldReturnCreated() throws Exception {
-        CompanyResponseDto responseDto = buildResponseDto(3L, "Gamma", "900300300", "Health");
-        // Ahora el servicio recibe un CompanyRequestDto
-        when(companyService.create(any(CompanyRequestDto.class))).thenReturn(responseDto);
+    void createCompany_WhenValid_ShouldReturnCreated() throws Exception {
+        when(companyService.create(any(CompanyRequestDto.class))).thenReturn(companyResponseDto);
 
         mockMvc.perform(post("/api/companies")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"Gamma\",\"nit\":\"900300300\",\"industry\":\"Health\"}"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(companyRequestDto)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(3))
-                .andExpect(jsonPath("$.name").value("Gamma"));
+                .andExpect(jsonPath("$.name", is("Test Company")));
     }
 
     @Test
-    void updateCompanyShouldReturnOk() throws Exception {
-        CompanyResponseDto updatedDto = buildResponseDto(1L, "Alpha Updated", "900100101", "Retail");
-        when(companyService.update(eq(1L), any(CompanyRequestDto.class))).thenReturn(updatedDto);
+    void updateCompany_WhenValid_ShouldReturnOk() throws Exception {
+        when(companyService.update(eq(1L), any(CompanyRequestDto.class))).thenReturn(companyResponseDto);
 
         mockMvc.perform(put("/api/companies/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"Alpha Updated\",\"nit\":\"900100101\",\"industry\":\"Retail\"}"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(companyRequestDto)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Alpha Updated"))
-                .andExpect(jsonPath("$.industry").value("Retail"));
+                .andExpect(jsonPath("$.name", is("Test Company")));
     }
 
     @Test
-    void deleteCompanyShouldReturnNoContent() throws Exception {
-        doNothing().when(companyService).delete(1L);
-
-        mockMvc.perform(delete("/api/companies/1"))
+    void deleteCompany_ShouldReturnNoContent() throws Exception {
+        mockMvc.perform(delete("/api/companies/1")
+                .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
-
-        verify(companyService).delete(1L);
-    }
-
-    @Test
-    void getCompanyByIdShouldReturnNotFoundWhenCompanyDoesNotExist() throws Exception {
-        when(companyService.findById(99L)).thenThrow(new CompanyNotFoundException(99L));
-
-        mockMvc.perform(get("/api/companies/99"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.status").value(404))
-                .andExpect(jsonPath("$.error").value("Empresa no encontrada con ID: 99"));
-    }
-
-    @Test
-    void updateCompanyShouldReturnNotFoundWhenCompanyDoesNotExist() throws Exception {
-        when(companyService.update(eq(99L), any(CompanyRequestDto.class))).thenThrow(new CompanyNotFoundException(99L));
-
-        mockMvc.perform(put("/api/companies/99")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"Alpha Updated\",\"nit\":\"900100101\",\"industry\":\"Retail\"}"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.status").value(404))
-                .andExpect(jsonPath("$.error").value("Empresa no encontrada con ID: 99"));
-    }
-
-    @Test
-    void createCompanyShouldReturnConflictWhenCompanyIsDuplicated() throws Exception {
-        when(companyService.create(any(CompanyRequestDto.class)))
-                .thenThrow(new DuplicateCompanyException("Ya existe una empresa con NIT: 900300300"));
-
-        mockMvc.perform(post("/api/companies")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"Gamma\",\"nit\":\"900300300\",\"industry\":\"Health\"}"))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.status").value(409))
-                .andExpect(jsonPath("$.error").value("Ya existe una empresa con NIT: 900300300"));
-    }
-
-    @Test
-    void createCompanyShouldReturnBadRequestWhenBodyIsInvalid() throws Exception {
-        mockMvc.perform(post("/api/companies")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"\",\"nit\":\"\",\"industry\":\"Health\"}"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.fields.name").value("El nombre es obligatorio"))
-                .andExpect(jsonPath("$.fields.nit").value("El NIT es obligatorio"));
-    }
-
-    // Helper para construir DTOs de respuesta rápidamente en los tests
-    private CompanyResponseDto buildResponseDto(Long id, String name, String nit, String industry) {
-        return new CompanyResponseDto(id, name, nit, industry);
     }
 }

@@ -4,16 +4,17 @@ import co.javeriana.dw.organizapp.dto.CompanyRequestDto;
 import co.javeriana.dw.organizapp.dto.CompanyResponseDto;
 import co.javeriana.dw.organizapp.entity.Company;
 import co.javeriana.dw.organizapp.exception.CompanyNotFoundException;
+import co.javeriana.dw.organizapp.exception.DuplicateCompanyException;
 import co.javeriana.dw.organizapp.repository.CompanyRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,87 +28,103 @@ class CompanyServiceImplTest {
     @Mock
     private CompanyRepository companyRepository;
 
-    @Spy // Usamos Spy en lugar de Mock para que ModelMapper funcione de verdad
-    private ModelMapper modelMapper = new ModelMapper();
+    @Mock
+    private ModelMapper modelMapper;
 
     @InjectMocks
     private CompanyServiceImpl companyService;
 
     private Company company;
-    private CompanyRequestDto requestDto;
+    private CompanyRequestDto companyRequestDto;
+    private CompanyResponseDto companyResponseDto;
 
     @BeforeEach
     void setUp() {
         company = new Company();
         company.setId(1L);
-        company.setName("Test Corp");
-        company.setNit("123456");
-        company.setIndustry("Tech");
+        company.setName("Test Company");
+        company.setNit("123456789");
 
-        requestDto = new CompanyRequestDto();
-        requestDto.setName("New Name");
-        requestDto.setNit("654321");
-        requestDto.setIndustry("Finance");
+        companyRequestDto = new CompanyRequestDto();
+        companyRequestDto.setName("Test Company");
+        companyRequestDto.setNit("123456789");
+
+        companyResponseDto = new CompanyResponseDto();
+        companyResponseDto.setId(1L);
+        companyResponseDto.setName("Test Company");
+        companyResponseDto.setNit("123456789");
     }
 
     @Test
-    void findAllShouldReturnDtoList() {
-        when(companyRepository.findAll()).thenReturn(List.of(company));
+    void findAll_ShouldReturnListOfCompanies() {
+        when(companyRepository.findAll()).thenReturn(Arrays.asList(company));
+        when(modelMapper.map(any(Company.class), eq(CompanyResponseDto.class))).thenReturn(companyResponseDto);
 
         List<CompanyResponseDto> result = companyService.findAll();
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals("Test Corp", result.get(0).getName());
+        assertEquals("Test Company", result.get(0).getName());
+        verify(companyRepository).findAll();
     }
 
     @Test
-    void findByIdShouldReturnDto() {
+    void findById_WhenCompanyExists_ShouldReturnCompany() {
         when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
+        when(modelMapper.map(company, CompanyResponseDto.class)).thenReturn(companyResponseDto);
 
         CompanyResponseDto result = companyService.findById(1L);
 
         assertNotNull(result);
-        assertEquals("Test Corp", result.getName());
+        assertEquals(1L, result.getId());
+        assertEquals("Test Company", result.getName());
+        verify(companyRepository).findById(1L);
     }
 
     @Test
-    void createShouldReturnResponseDto() {
-        when(companyRepository.save(any(Company.class))).thenReturn(company);
+    void findById_WhenCompanyNotExists_ShouldThrowException() {
+        when(companyRepository.findById(1L)).thenReturn(Optional.empty());
 
-        CompanyResponseDto result = companyService.create(requestDto);
-
-        assertNotNull(result);
-        verify(companyRepository).save(any(Company.class));
+        assertThrows(CompanyNotFoundException.class, () -> companyService.findById(1L));
+        verify(companyRepository).findById(1L);
     }
 
     @Test
-    void updateShouldModifyExistingCompanyFromDto() {
-        when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
-        when(companyRepository.save(any(Company.class))).thenReturn(company);
+    void create_WhenValidCompany_ShouldReturnCreatedCompany() {
+        when(companyRepository.existsByName(anyString())).thenReturn(false);
+        when(companyRepository.existsByNit(anyString())).thenReturn(false);
+        when(modelMapper.map(companyRequestDto, Company.class)).thenReturn(company);
+        when(companyRepository.save(company)).thenReturn(company);
+        when(modelMapper.map(company, CompanyResponseDto.class)).thenReturn(companyResponseDto);
 
-        CompanyResponseDto result = companyService.update(1L, requestDto);
+        CompanyResponseDto result = companyService.create(companyRequestDto);
 
         assertNotNull(result);
-        // Verificamos que los datos del DTO se pasaron a la entidad guardada
-        assertEquals(requestDto.getName(), result.getName());
+        assertEquals("Test Company", result.getName());
         verify(companyRepository).save(company);
     }
 
     @Test
-    void deleteShouldCallRepository() {
+    void create_WhenDuplicateName_ShouldThrowException() {
+        when(companyRepository.existsByName(anyString())).thenReturn(true);
+
+        assertThrows(DuplicateCompanyException.class, () -> companyService.create(companyRequestDto));
+        verify(companyRepository, never()).save(any());
+    }
+
+    @Test
+    void delete_WhenCompanyExists_ShouldDeleteCompany() {
         when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
-        doNothing().when(companyRepository).delete(company);
 
-        companyService.delete(1L);
-
+        assertDoesNotThrow(() -> companyService.delete(1L));
         verify(companyRepository).delete(company);
     }
 
     @Test
-    void findByIdShouldThrowExceptionWhenNotFound() {
-        when(companyRepository.findById(99L)).thenReturn(Optional.empty());
+    void delete_WhenCompanyNotExists_ShouldThrowException() {
+        when(companyRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThrows(CompanyNotFoundException.class, () -> companyService.findById(99L));
+        assertThrows(CompanyNotFoundException.class, () -> companyService.delete(1L));
+        verify(companyRepository, never()).delete(any());
     }
 }
