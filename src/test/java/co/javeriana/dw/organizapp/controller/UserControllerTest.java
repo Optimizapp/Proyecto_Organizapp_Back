@@ -3,27 +3,34 @@ package co.javeriana.dw.organizapp.controller;
 import co.javeriana.dw.organizapp.dto.UserRequestDto;
 import co.javeriana.dw.organizapp.dto.UserResponseDto;
 import co.javeriana.dw.organizapp.service.UserService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import co.javeriana.dw.thymeleaf.ThymeleafApplication;
+import tools.jackson.databind.ObjectMapper;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(UserController.class)
+@SpringBootTest(classes = ThymeleafApplication.class)
+@AutoConfigureMockMvc
 class UserControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private UserService userService;
 
     @Autowired
@@ -31,9 +38,7 @@ class UserControllerTest {
 
     @Test
     void getAllUsers() throws Exception {
-        List<UserResponseDto> users = List.of(new UserResponseDto());
-
-        when(userService.findAll()).thenReturn(users);
+        when(userService.findAll()).thenReturn(List.of(new UserResponseDto()));
 
         mockMvc.perform(get("/api/users"))
                 .andExpect(status().isOk());
@@ -41,9 +46,7 @@ class UserControllerTest {
 
     @Test
     void getUserById() throws Exception {
-        UserResponseDto user = new UserResponseDto();
-
-        when(userService.findById(1L)).thenReturn(user);
+        when(userService.findById(1L)).thenReturn(new UserResponseDto());
 
         mockMvc.perform(get("/api/users/1"))
                 .andExpect(status().isOk());
@@ -52,9 +55,14 @@ class UserControllerTest {
     @Test
     void createUser() throws Exception {
         UserRequestDto request = new UserRequestDto();
-        UserResponseDto response = new UserResponseDto();
 
-        when(userService.create(any())).thenReturn(response);
+        // 🔥 CAMPOS OBLIGATORIOS DEL DTO
+        request.setName("Juan Perez");
+        request.setEmail("juan@test.com");
+        request.setRoleId(1L);
+        request.setCompanyId(1L);
+
+        when(userService.create(any())).thenReturn(new UserResponseDto());
 
         mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -65,9 +73,14 @@ class UserControllerTest {
     @Test
     void updateUser() throws Exception {
         UserRequestDto request = new UserRequestDto();
-        UserResponseDto response = new UserResponseDto();
 
-        when(userService.update(eq(1L), any())).thenReturn(response);
+        // 🔥 CAMPOS OBLIGATORIOS DEL DTO
+        request.setName("Juan Update");
+        request.setEmail("update@test.com");
+        request.setRoleId(1L);
+        request.setCompanyId(1L);
+
+        when(userService.update(eq(1L), any())).thenReturn(new UserResponseDto());
 
         mockMvc.perform(put("/api/users/1")
                         .contentType(MediaType.APPLICATION_JSON)
