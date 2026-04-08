@@ -65,6 +65,7 @@ class ProcessTest {
     void shouldAllowNullDescription() {
         Process process = new Process();
         process.setName("Proceso X");
+        process.setDescription(null);
         process.setStatus(ProcessStatus.values()[0]);
         process.setCompany(new Company());
         process.setUser(new User());
@@ -72,6 +73,7 @@ class ProcessTest {
         Set<ConstraintViolation<Process>> violations = validator.validate(process);
 
         assertTrue(violations.isEmpty());
+        assertNull(process.getDescription());
     }
 
     @Test

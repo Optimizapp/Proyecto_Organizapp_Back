@@ -10,12 +10,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(classes = ThymeleafApplication.class)
 @Transactional
 class NodeRepositoryTest {
+
+    private static final Random RANDOM = new Random();
 
     @Autowired
     private NodeRepository nodeRepository;
@@ -64,7 +67,7 @@ class NodeRepositoryTest {
 
         ProcessVersion version = new ProcessVersion();
         version.setProceso(process);
-        version.setNumeroVersion((int) (Math.random() * 1000)); 
+        version.setNumeroVersion(RANDOM.nextInt(1000));
         version.setEstado(ProcessVersionStatus.BORRADOR);
         version.setCreadoPor(user);
         version.setCreatedAt(LocalDateTime.now());

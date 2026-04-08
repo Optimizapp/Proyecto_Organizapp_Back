@@ -73,10 +73,12 @@ class UserTest {
     @Test
     void shouldAllowNullPassword() {
         User user = buildValidUser();
+        user.setContrasenaHash(null);
 
         Set<ConstraintViolation<User>> violations = validator.validate(user);
 
         assertTrue(violations.isEmpty());
+        assertNull(user.getContrasenaHash());
     }
 
     @Test

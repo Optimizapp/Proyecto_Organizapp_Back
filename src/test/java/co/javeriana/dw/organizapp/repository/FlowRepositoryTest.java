@@ -69,11 +69,11 @@ class FlowRepositoryTest {
 
 
     private Company buildCompany() {
-        Company company = new Company();
-        company.setName("Company " + Math.random());
-        company.setNit(String.valueOf(System.nanoTime()));
-        company.setIndustry("Tech");
-        return companyRepository.save(company);
+        Company persistedCompany = new Company();
+        persistedCompany.setName("Company " + Math.random());
+        persistedCompany.setNit(String.valueOf(System.nanoTime()));
+        persistedCompany.setIndustry("Tech");
+        return companyRepository.save(persistedCompany);
     }
 
     private User buildUser() {

@@ -10,12 +10,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(classes = ThymeleafApplication.class)
 @Transactional
 class PermissionRepositoryTest {
+
+    private static final Random RANDOM = new Random();
 
     @Autowired
     private PermissionRepository permissionRepository;
@@ -37,8 +40,8 @@ class PermissionRepositoryTest {
     void shouldReturnPermissionsByRoleId() {
         Role role = buildRole();
 
-        buildPermission(role,"Read");
-        buildPermission(role,"Write");
+        buildPermission(role, "Read");
+        buildPermission(role, "Write");
 
         List<Permission> result = permissionRepository.findByRolId(role.getId());
 
@@ -84,7 +87,7 @@ class PermissionRepositoryTest {
     private Company buildCompany() {
         Company company = new Company();
         company.setName("Company " + Math.random());
-        company.setNit(String.valueOf((int)(Math.random() * 1000000))); // ✅ corto
+        company.setNit(String.valueOf(RANDOM.nextInt(1_000_000)));
         company.setIndustry("Tech");
 
         return companyRepository.save(company);
