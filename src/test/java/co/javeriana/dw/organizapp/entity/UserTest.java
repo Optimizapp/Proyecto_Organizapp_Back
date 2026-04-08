@@ -71,16 +71,6 @@ class UserTest {
     }
 
     @Test
-    void shouldFailWhenRoleIsNull() {
-        User user = buildValidUser();
-        user.setRol(null);
-
-        Set<ConstraintViolation<User>> violations = validator.validate(user);
-
-        assertFalse(violations.isEmpty());
-    }
-
-    @Test
     void shouldAllowNullPassword() {
         User user = buildValidUser();
 

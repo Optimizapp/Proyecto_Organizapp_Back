@@ -4,9 +4,12 @@ import co.javeriana.dw.organizapp.dto.ProcessRequestDto;
 import co.javeriana.dw.organizapp.dto.ProcessResponseDto;
 import co.javeriana.dw.organizapp.entity.Company;
 import co.javeriana.dw.organizapp.entity.Process;
+import co.javeriana.dw.organizapp.entity.ProcessStatus;
+import co.javeriana.dw.organizapp.entity.User;
 import co.javeriana.dw.organizapp.exception.ResourceNotFoundException;
 import co.javeriana.dw.organizapp.repository.CompanyRepository;
 import co.javeriana.dw.organizapp.repository.ProcessRepository;
+import co.javeriana.dw.organizapp.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -14,12 +17,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,43 +35,64 @@ class ProcessServiceImplTest {
     private CompanyRepository companyRepository;
 
     @Mock
+    private UserRepository userRepository;
+
+    @Mock
     private ModelMapper modelMapper;
 
     @InjectMocks
     private ProcessServiceImpl processService;
 
-    @Test
-    void testFindAll() {
-        Process process = new Process();
-        process.setId(1L);
-        process.setName("Test Process");
+private Process buildProcess() {
+    Company company = new Company();
+    company.setId(1L);
 
+    User user = new User();
+    user.setId(1L);
+
+    Process process = new Process();
+    process.setId(1L);
+    process.setName("Test Process");
+    process.setCompany(company);
+    process.setUser(user);
+    process.setStatus(ProcessStatus.ACTIVE); 
+
+    return process;
+}
+
+    private ProcessResponseDto buildResponseDto() {
         ProcessResponseDto dto = new ProcessResponseDto();
         dto.setId(1L);
         dto.setName("Test Process");
+        dto.setCompanyId(1L);
+        dto.setUserId(1L);
+        return dto;
+    }
 
-        when(processRepository.findAll()).thenReturn(Arrays.asList(process));
-        when(modelMapper.map(any(Process.class), eq(ProcessResponseDto.class))).thenReturn(dto);
+    @Test
+    void testFindAll() {
+        Process process = buildProcess();
+
+        when(processRepository.findAll()).thenReturn(List.of(process));
+        when(modelMapper.map(any(Process.class), eq(ProcessResponseDto.class)))
+                .thenReturn(buildResponseDto());
 
         List<ProcessResponseDto> result = processService.findAll();
 
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals("Test Process", result.get(0).getName());
+
+        verify(processRepository).findAll();
     }
 
     @Test
     void testFindByIdSuccess() {
-        Process process = new Process();
-        process.setId(1L);
-        process.setName("Test Process");
-
-        ProcessResponseDto dto = new ProcessResponseDto();
-        dto.setId(1L);
-        dto.setName("Test Process");
+        Process process = buildProcess();
 
         when(processRepository.findById(1L)).thenReturn(Optional.of(process));
-        when(modelMapper.map(any(Process.class), eq(ProcessResponseDto.class))).thenReturn(dto);
+        when(modelMapper.map(any(Process.class), eq(ProcessResponseDto.class)))
+                .thenReturn(buildResponseDto());
 
         ProcessResponseDto result = processService.findById(1L);
 
@@ -80,7 +104,8 @@ class ProcessServiceImplTest {
     void testFindByIdNotFound() {
         when(processRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> processService.findById(1L));
+        assertThrows(ResourceNotFoundException.class,
+                () -> processService.findById(1L));
     }
 
     @Test
@@ -88,39 +113,43 @@ class ProcessServiceImplTest {
         ProcessRequestDto requestDto = new ProcessRequestDto();
         requestDto.setName("Test Process");
         requestDto.setCompanyId(1L);
-
-        Process process = new Process();
-        process.setId(1L);
-        process.setName("Test Process");
+        requestDto.setUserId(1L);
+        requestDto.setStatus("ACTIVE"); // 👈 IMPORTANTE
 
         Company company = new Company();
         company.setId(1L);
-        company.setName("Test Company");
 
-        ProcessResponseDto responseDto = new ProcessResponseDto();
-        responseDto.setId(1L);
-        responseDto.setName("Test Process");
+        User user = new User();
+        user.setId(1L);
+
+        Process process = buildProcess();
 
         when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
-        when(modelMapper.map(any(ProcessRequestDto.class), eq(Process.class))).thenReturn(process);
-        when(processRepository.save(any(Process.class))).thenReturn(process);
-        when(modelMapper.map(any(Process.class), eq(ProcessResponseDto.class))).thenReturn(responseDto);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(modelMapper.map(any(ProcessRequestDto.class), eq(Process.class)))
+                .thenReturn(process);
+        when(processRepository.save(any(Process.class)))
+                .thenReturn(process);
+        when(modelMapper.map(any(Process.class), eq(ProcessResponseDto.class)))
+                .thenReturn(buildResponseDto());
 
         ProcessResponseDto result = processService.create(requestDto);
 
         assertNotNull(result);
         assertEquals("Test Process", result.getName());
+
+        verify(processRepository).save(any(Process.class));
     }
 
     @Test
     void testDelete() {
-        Process process = new Process();
-        process.setId(1L);
+        Process process = buildProcess();
 
         when(processRepository.findById(1L)).thenReturn(Optional.of(process));
-        doNothing().when(processRepository).delete(any(Process.class));
 
-        assertDoesNotThrow(() -> processService.delete(1L));
-        verify(processRepository, times(1)).delete(any(Process.class));
+        processService.delete(1L);
+
+        // 👇 tu implementación hace soft delete
+        verify(processRepository).save(process);
     }
 }
