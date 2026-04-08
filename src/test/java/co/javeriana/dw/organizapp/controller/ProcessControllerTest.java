@@ -56,7 +56,6 @@ class ProcessControllerTest {
     void create() throws Exception {
         ProcessRequestDto request = new ProcessRequestDto();
 
-        // 🔥 TODOS los campos obligatorios
         request.setName("Proceso Test");
         request.setDescription("Descripción válida");
         request.setStatus("ACTIVE");
@@ -75,7 +74,6 @@ class ProcessControllerTest {
     void update() throws Exception {
         ProcessRequestDto request = new ProcessRequestDto();
 
-        // 🔥 TODOS los campos obligatorios
         request.setName("Proceso Update");
         request.setDescription("Descripción update");
         request.setStatus("ACTIVE");
