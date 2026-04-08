@@ -2,6 +2,8 @@ package co.javeriana.dw.organizapp.entity;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -45,5 +47,59 @@ class CompanyTest {
         String toString = company.toString();
         assertNotNull(toString);
         assertTrue(toString.contains("Test Company"));
+    }
+
+    @Test
+    void shouldSetTimestampsOnPrePersist() {
+        Company company = new Company();
+
+        company.prePersist();
+
+        assertNotNull(company.getCreatedAt());
+        assertNotNull(company.getUpdatedAt());
+    }
+
+    @Test
+    void shouldUpdateOnlyUpdatedAtOnPreUpdate() {
+        Company company = new Company();
+        company.prePersist();
+        LocalDateTime createdAt = company.getCreatedAt();
+
+        company.preUpdate();
+
+        assertEquals(createdAt, company.getCreatedAt());
+        assertNotNull(company.getUpdatedAt());
+    }
+
+    @Test
+    void shouldAddAndRemoveUser() {
+        Company company = new Company();
+        User user = new User();
+
+        company.addUser(user);
+
+        assertTrue(company.getUsers().contains(user));
+        assertEquals(company, user.getCompany());
+
+        company.removeUser(user);
+
+        assertFalse(company.getUsers().contains(user));
+        assertNull(user.getCompany());
+    }
+
+    @Test
+    void shouldAddAndRemoveProcess() {
+        Company company = new Company();
+        Process process = new Process();
+
+        company.addProcess(process);
+
+        assertTrue(company.getProcesses().contains(process));
+        assertEquals(company, process.getCompany());
+
+        company.removeProcess(process);
+
+        assertFalse(company.getProcesses().contains(process));
+        assertNull(process.getCompany());
     }
 }
