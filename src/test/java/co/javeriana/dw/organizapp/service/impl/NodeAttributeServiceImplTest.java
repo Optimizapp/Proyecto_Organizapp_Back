@@ -40,7 +40,7 @@ class NodeAttributeServiceImplTest {
         NodeAttribute attr = new NodeAttribute();
         attr.setId(1L);
         attr.setNodo(node);
-        attr.setTipo(NodeAttributeType.STRING);
+        attr.setTipo(NodeAttributeType.TEXTO);
 
         when(nodeAttributeRepository.findAll()).thenReturn(List.of(attr));
 
@@ -57,7 +57,7 @@ class NodeAttributeServiceImplTest {
         NodeAttribute attr = new NodeAttribute();
         attr.setId(1L);
         attr.setNodo(node);
-        attr.setTipo(NodeAttributeType.STRING);
+        attr.setTipo(NodeAttributeType.TEXTO);
 
         when(nodeRepository.findById(1L)).thenReturn(Optional.of(node));
         when(nodeAttributeRepository.findByNodoId(1L)).thenReturn(List.of(attr));
@@ -75,7 +75,7 @@ class NodeAttributeServiceImplTest {
         NodeAttribute attr = new NodeAttribute();
         attr.setId(1L);
         attr.setNodo(node);
-        attr.setTipo(NodeAttributeType.STRING);
+        attr.setTipo(NodeAttributeType.TEXTO);
 
         when(nodeAttributeRepository.findById(1L)).thenReturn(Optional.of(attr));
 
@@ -100,12 +100,12 @@ class NodeAttributeServiceImplTest {
         request.setNodeId(1L);
         request.setClave("clave");
         request.setValor("valor");
-        request.setTipo("STRING");
+        request.setTipo("TEXTO");
 
         NodeAttribute attr = new NodeAttribute();
         attr.setId(1L);
         attr.setNodo(node);
-        attr.setTipo(NodeAttributeType.STRING);
+        attr.setTipo(NodeAttributeType.TEXTO);
 
         when(nodeRepository.findById(1L)).thenReturn(Optional.of(node));
         when(nodeAttributeRepository.save(any())).thenReturn(attr);
@@ -123,13 +123,13 @@ class NodeAttributeServiceImplTest {
         NodeAttribute existing = new NodeAttribute();
         existing.setId(1L);
         existing.setNodo(node);
-        existing.setTipo(NodeAttributeType.STRING);
+        existing.setTipo(NodeAttributeType.TEXTO);
 
         NodeAttributeRequestDto request = new NodeAttributeRequestDto();
         request.setNodeId(1L);
         request.setClave("clave");
         request.setValor("valor");
-        request.setTipo("STRING");
+        request.setTipo("TEXTO");
 
         when(nodeAttributeRepository.findById(1L)).thenReturn(Optional.of(existing));
         when(nodeRepository.findById(1L)).thenReturn(Optional.of(node));

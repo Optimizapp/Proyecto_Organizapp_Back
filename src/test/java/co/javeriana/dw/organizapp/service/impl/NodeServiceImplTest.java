@@ -40,7 +40,7 @@ class NodeServiceImplTest {
         Node node = new Node();
         node.setId(1L);
         node.setVersion(version);
-        node.setTipo(NodeType.START);
+        node.setTipo(NodeType.INICIO);
 
         when(nodeRepository.findAll()).thenReturn(List.of(node));
 
@@ -57,7 +57,7 @@ class NodeServiceImplTest {
         Node node = new Node();
         node.setId(1L);
         node.setVersion(version);
-        node.setTipo(NodeType.START);
+        node.setTipo(NodeType.INICIO);
 
         when(processVersionRepository.findById(1L)).thenReturn(Optional.of(version));
         when(nodeRepository.findByVersionId(1L)).thenReturn(List.of(node));
@@ -75,7 +75,7 @@ class NodeServiceImplTest {
         Node node = new Node();
         node.setId(1L);
         node.setVersion(version);
-        node.setTipo(NodeType.START);
+        node.setTipo(NodeType.INICIO);
 
         when(nodeRepository.findById(1L)).thenReturn(Optional.of(node));
 
@@ -98,7 +98,7 @@ class NodeServiceImplTest {
 
         NodeRequestDto request = new NodeRequestDto();
         request.setVersionId(1L);
-        request.setTipo("START");
+        request.setTipo("INICIO");
         request.setNombre("Nodo");
         request.setDescripcion("Desc");
         request.setX(1f);
@@ -107,7 +107,7 @@ class NodeServiceImplTest {
         Node node = new Node();
         node.setId(1L);
         node.setVersion(version);
-        node.setTipo(NodeType.START);
+        node.setTipo(NodeType.INICIO);
 
         when(processVersionRepository.findById(1L)).thenReturn(Optional.of(version));
         when(nodeRepository.save(any())).thenReturn(node);
@@ -125,11 +125,11 @@ class NodeServiceImplTest {
         Node existing = new Node();
         existing.setId(1L);
         existing.setVersion(version);
-        existing.setTipo(NodeType.START);
+        existing.setTipo(NodeType.INICIO);
 
         NodeRequestDto request = new NodeRequestDto();
         request.setVersionId(1L);
-        request.setTipo("START");
+        request.setTipo("INICIO");
         request.setNombre("Nodo");
         request.setDescripcion("Desc");
         request.setX(1f);

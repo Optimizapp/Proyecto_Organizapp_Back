@@ -34,7 +34,7 @@ class CommentServiceImplTest {
         commentRepository = mock(CommentRepository.class);
         processVersionRepository = mock(ProcessVersionRepository.class);
         userRepository = mock(UserRepository.class);
-        modelMapper = mock(ModelMapper.class); // 🔥 MOCK
+        modelMapper = mock(ModelMapper.class);
 
         service = new CommentServiceImpl(
                 commentRepository,
