@@ -4,8 +4,6 @@ on:
   push:
     branches: [main]
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build-and-publish:
@@ -47,30 +45,11 @@ jobs:
     name: Deploy on MicroK8s On-Premise
     runs-on: main
     needs: build-and-publish
-
+ 
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v5
-    - name: Check MicroK8s status
-      run: sudo microk8s status --wait-ready
-
-    - name: Check cluster connectivity
-      run: sudo microk8s kubectl get nodes
-
-    - name: Ensure namespace exists
-      run: sudo microk8s kubectl create namespace grupo14 --dry-run=client -o yaml | sudo microk8s kubectl apply -f -
-
+      uses: actions/checkout@v3
     - name: Apply Kubernetes deployment
       run: sudo microk8s kubectl apply -f k8s/deployment.yaml
-
     - name: Restart Kubernetes deployment
       run: sudo microk8s kubectl rollout restart deployment/organizapp-backend -n grupo14
-
-    - name: Wait for rollout
-      run: sudo microk8s kubectl rollout status deployment/organizapp-backend -n grupo14 --timeout=180s
-
-    - name: Show deployed resources
-      run: sudo microk8s kubectl get all -n grupo14
-
-    - name: Show pod logs
-      run: sudo microk8s kubectl logs -l app=organizapp-backend -n grupo14 --tail=100 --prefix=true || true

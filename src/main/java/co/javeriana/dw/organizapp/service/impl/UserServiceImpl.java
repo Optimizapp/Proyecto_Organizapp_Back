@@ -5,6 +5,7 @@ import co.javeriana.dw.organizapp.dto.UserResponseDto;
 import co.javeriana.dw.organizapp.entity.Company;
 import co.javeriana.dw.organizapp.entity.Role;
 import co.javeriana.dw.organizapp.entity.User;
+import co.javeriana.dw.organizapp.exception.ResourceNotFoundException;
 import co.javeriana.dw.organizapp.repository.CompanyRepository;
 import co.javeriana.dw.organizapp.repository.RoleRepository;
 import co.javeriana.dw.organizapp.repository.UserRepository;
@@ -14,10 +15,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements UserService {
+
+    private static final String USER_NOT_FOUND_MESSAGE = "Usuario no encontrado con ID: ";
+    private static final String COMPANY_NOT_FOUND_MESSAGE = "La empresa especificada no existe con ID: ";
+    private static final String ROLE_NOT_FOUND_MESSAGE = "El rol especificado no existe con ID: ";
 
     private final UserRepository userRepository;
     private final CompanyRepository companyRepository;
@@ -39,14 +43,14 @@ public class UserServiceImpl implements UserService {
     public List<UserResponseDto> findAll() {
         return userRepository.findAll().stream()
                 .map(this::convertToDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public UserResponseDto findById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_MESSAGE + id));
         return convertToDto(user);
     }
 
@@ -54,9 +58,9 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponseDto create(UserRequestDto userDto) {
         Company company = companyRepository.findById(userDto.getCompanyId())
-                .orElseThrow(() -> new RuntimeException("La empresa especificada no existe"));
+                .orElseThrow(() -> new ResourceNotFoundException(COMPANY_NOT_FOUND_MESSAGE + userDto.getCompanyId()));
         Role role = roleRepository.findById(userDto.getRoleId())
-                .orElseThrow(() -> new RuntimeException("El rol especificado no existe"));
+                .orElseThrow(() -> new ResourceNotFoundException(ROLE_NOT_FOUND_MESSAGE + userDto.getRoleId()));
 
         User user = modelMapper.map(userDto, User.class);
         user.setCompany(company);
@@ -70,12 +74,12 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponseDto update(Long id, UserRequestDto userDto) {
         User existingUser = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_MESSAGE + id));
 
         Company company = companyRepository.findById(userDto.getCompanyId())
-                .orElseThrow(() -> new RuntimeException("La empresa no existe"));
+                .orElseThrow(() -> new ResourceNotFoundException(COMPANY_NOT_FOUND_MESSAGE + userDto.getCompanyId()));
         Role role = roleRepository.findById(userDto.getRoleId())
-                .orElseThrow(() -> new RuntimeException("El rol no existe"));
+                .orElseThrow(() -> new ResourceNotFoundException(ROLE_NOT_FOUND_MESSAGE + userDto.getRoleId()));
 
         existingUser.setName(userDto.getName());
         existingUser.setEmail(userDto.getEmail());
@@ -88,10 +92,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void delete(Long id) {
-        if (!userRepository.existsById(id)) {
-            throw new RuntimeException("No se puede eliminar: Usuario no encontrado");
-        }
-        userRepository.deleteById(id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_MESSAGE + id));
+        userRepository.delete(user);
     }
 
     private UserResponseDto convertToDto(User user) {

@@ -25,6 +25,16 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.CONFLICT, exception.getMessage());
     }
 
+    @ExceptionHandler(ResourceInUseException.class)
+    public ResponseEntity<Map<String, Object>> handleResourceInUse(ResourceInUseException exception) {
+        return buildResponse(HttpStatus.CONFLICT, exception.getMessage());
+    }
+
+    @ExceptionHandler({InvalidRequestException.class, IllegalArgumentException.class})
+    public ResponseEntity<Map<String, Object>> handleBadRequest(RuntimeException exception) {
+        return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
+
     // 3. Manejo de Validaciones de DTOs (@Valid)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException exception) {
