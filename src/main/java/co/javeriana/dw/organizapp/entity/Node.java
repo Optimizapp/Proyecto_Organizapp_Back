@@ -44,8 +44,12 @@ public class Node {
 
     @NotNull(message = "El tipo de nodo es obligatorio")
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, length = 30)
     private NodeType tipo;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "gateway_type", length = 30)
+    private GatewayType gatewayType;
 
     @NotBlank(message = "El nombre del nodo es obligatorio")
     @Size(max = 150, message = "El nombre del nodo no puede superar los 150 caracteres")
@@ -65,6 +69,18 @@ public class Node {
     @PositiveOrZero(message = "La coordenada y debe ser positiva o cero")
     @Column(nullable = false)
     private Float y;
+
+    @PositiveOrZero(message = "El ancho debe ser positivo o cero")
+    @Column
+    private Float width;
+
+    @PositiveOrZero(message = "El alto debe ser positivo o cero")
+    @Column
+    private Float height;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lane_id")
+    private Lane lane;
 
     @ToString.Exclude
     @OneToMany(mappedBy = "nodo", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)

@@ -54,6 +54,10 @@ public class Process {
     @Column(length = 1000)
     private String description;
 
+    @Size(max = 100, message = "La categoria no puede superar los 100 caracteres")
+    @Column(length = 100)
+    private String category;
+
     @NotNull(message = "El estado del proceso es obligatorio")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -74,6 +78,10 @@ public class Process {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "main_pool_id")
+    private Pool mainPool;
 
     @ToString.Exclude
     @OneToMany(mappedBy = "proceso", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)

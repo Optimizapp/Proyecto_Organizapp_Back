@@ -8,4 +8,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface PermissionRepository extends JpaRepository<Permission, Long> {
     List<Permission> findByRolId(Long roleId);
+
+    boolean existsByRolIdAndCodigo(Long roleId, String codigo);
 }

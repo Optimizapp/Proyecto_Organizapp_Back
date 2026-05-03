@@ -1,69 +1,88 @@
 package co.javeriana.dw.organizapp.exception;
 
+import jakarta.servlet.http.HttpServletRequest;
+import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.time.LocalDateTime;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // 1. Manejo de Recursos No Encontrados (Genérico para User, Process, Company)
-    @ExceptionHandler({ResourceNotFoundException.class, CompanyNotFoundException.class})
-    public ResponseEntity<Map<String, Object>> handleNotFound(RuntimeException exception) {
-        return buildResponse(HttpStatus.NOT_FOUND, exception.getMessage());
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleNotFound(
+            ResourceNotFoundException exception,
+            HttpServletRequest request) {
+        return buildResponse(HttpStatus.NOT_FOUND, exception.getMessage(), request.getRequestURI(), null);
     }
 
-    // 2. Manejo de Conflictos (Duplicados)
-    @ExceptionHandler(DuplicateCompanyException.class)
-    public ResponseEntity<Map<String, Object>> handleConflict(DuplicateCompanyException exception) {
-        return buildResponse(HttpStatus.CONFLICT, exception.getMessage());
+    @ExceptionHandler(DuplicateResourceException.class)
+    public ResponseEntity<ApiErrorResponse> handleDuplicate(
+            DuplicateResourceException exception,
+            HttpServletRequest request) {
+        return buildResponse(HttpStatus.CONFLICT, exception.getMessage(), request.getRequestURI(), null);
     }
 
     @ExceptionHandler(ResourceInUseException.class)
-    public ResponseEntity<Map<String, Object>> handleResourceInUse(ResourceInUseException exception) {
-        return buildResponse(HttpStatus.CONFLICT, exception.getMessage());
+    public ResponseEntity<ApiErrorResponse> handleResourceInUse(
+            ResourceInUseException exception,
+            HttpServletRequest request) {
+        return buildResponse(HttpStatus.CONFLICT, exception.getMessage(), request.getRequestURI(), null);
     }
 
-    @ExceptionHandler({InvalidRequestException.class, IllegalArgumentException.class})
-    public ResponseEntity<Map<String, Object>> handleBadRequest(RuntimeException exception) {
-        return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage());
+    @ExceptionHandler(BusinessRuleException.class)
+    public ResponseEntity<ApiErrorResponse> handleBusinessRule(
+            BusinessRuleException exception,
+            HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), request.getRequestURI(), null);
     }
 
-    // 3. Manejo de Validaciones de DTOs (@Valid)
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiErrorResponse> handleIllegalArgument(
+            IllegalArgumentException exception,
+            HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), request.getRequestURI(), null);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException exception) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.BAD_REQUEST.value());
-        body.put("error", "Error de validación en los datos");
-
+    public ResponseEntity<ApiErrorResponse> handleValidation(
+            MethodArgumentNotValidException exception,
+            HttpServletRequest request) {
         Map<String, String> fieldErrors = new LinkedHashMap<>();
         exception.getBindingResult().getFieldErrors()
                 .forEach(error -> fieldErrors.put(error.getField(), error.getDefaultMessage()));
-        
-        body.put("fields", fieldErrors); 
 
-        return ResponseEntity.badRequest().body(body);
+        return buildResponse(HttpStatus.BAD_REQUEST, "Datos invalidos", request.getRequestURI(), fieldErrors);
     }
 
-    // 4. "The Safety Net": Manejo de cualquier otra excepción no controlada
-    // Esto evita que el servidor exponga detalles internos en un error 500
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGlobalException(Exception ex) {
-        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Ha ocurrido un error interno en el servidor.");
+    public ResponseEntity<ApiErrorResponse> handleGlobalException(
+            Exception exception,
+            HttpServletRequest request) {
+        return buildResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Ha ocurrido un error interno en el servidor.",
+                request.getRequestURI(),
+                null);
     }
 
-    private ResponseEntity<Map<String, Object>> buildResponse(HttpStatus status, String message) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", status.value());
-        body.put("message", message);
+    private ResponseEntity<ApiErrorResponse> buildResponse(
+            HttpStatus status,
+            String message,
+            String path,
+            Map<String, String> fields) {
+        ApiErrorResponse body = ApiErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(status.value())
+                .error(status.getReasonPhrase())
+                .message(message)
+                .path(path)
+                .fields(fields)
+                .build();
         return ResponseEntity.status(status).body(body);
     }
 }

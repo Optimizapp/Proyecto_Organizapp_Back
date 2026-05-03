@@ -8,4 +8,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ProcessVersionRepository extends JpaRepository<ProcessVersion, Long> {
     List<ProcessVersion> findByProcesoId(Long processId);
+
+    boolean existsByProcesoIdAndNumeroVersion(Long processId, Integer numeroVersion);
 }

@@ -3,8 +3,10 @@ package co.javeriana.dw.organizapp.service.impl;
 import co.javeriana.dw.organizapp.dto.FlowRequestDto;
 import co.javeriana.dw.organizapp.dto.FlowResponseDto;
 import co.javeriana.dw.organizapp.entity.Flow;
+import co.javeriana.dw.organizapp.entity.FlowType;
 import co.javeriana.dw.organizapp.entity.Node;
 import co.javeriana.dw.organizapp.entity.ProcessVersion;
+import co.javeriana.dw.organizapp.exception.BusinessRuleException;
 import co.javeriana.dw.organizapp.exception.ResourceNotFoundException;
 import co.javeriana.dw.organizapp.repository.FlowRepository;
 import co.javeriana.dw.organizapp.repository.NodeRepository;
@@ -67,12 +69,17 @@ public class FlowServiceImpl implements FlowService {
         ProcessVersion version = findVersion(flowDto.getVersionId());
         Node originNode = findNode(flowDto.getOriginNodeId());
         Node destinationNode = findNode(flowDto.getDestinationNodeId());
+        FlowType flowType = parseFlowType(flowDto.getType());
+        validateDifferentNodes(originNode, destinationNode);
         validateNodesBelongToVersion(version, originNode, destinationNode);
 
-        Flow flow = modelMapper.map(flowDto, Flow.class);
+        Flow flow = new Flow();
         flow.setVersion(version);
         flow.setNodoOrigen(originNode);
         flow.setNodoDestino(destinationNode);
+        flow.setType(flowType);
+        flow.setCondicion(flowDto.getCondicion());
+        flow.setEtiqueta(flowDto.getEtiqueta());
 
         return toDto(flowRepository.save(flow));
     }
@@ -85,11 +92,14 @@ public class FlowServiceImpl implements FlowService {
         ProcessVersion version = findVersion(flowDto.getVersionId());
         Node originNode = findNode(flowDto.getOriginNodeId());
         Node destinationNode = findNode(flowDto.getDestinationNodeId());
+        FlowType flowType = parseFlowType(flowDto.getType());
+        validateDifferentNodes(originNode, destinationNode);
         validateNodesBelongToVersion(version, originNode, destinationNode);
 
         existingFlow.setVersion(version);
         existingFlow.setNodoOrigen(originNode);
         existingFlow.setNodoDestino(destinationNode);
+        existingFlow.setType(flowType);
         existingFlow.setCondicion(flowDto.getCondicion());
         existingFlow.setEtiqueta(flowDto.getEtiqueta());
 
@@ -109,6 +119,7 @@ public class FlowServiceImpl implements FlowService {
         dto.setVersionId(flow.getVersion().getId());
         dto.setOriginNodeId(flow.getNodoOrigen().getId());
         dto.setDestinationNodeId(flow.getNodoDestino().getId());
+        dto.setType(flow.getType().name());
         return dto;
     }
 
@@ -125,7 +136,24 @@ public class FlowServiceImpl implements FlowService {
     private void validateNodesBelongToVersion(ProcessVersion version, Node originNode, Node destinationNode) {
         if (!originNode.getVersion().getId().equals(version.getId())
                 || !destinationNode.getVersion().getId().equals(version.getId())) {
-            throw new IllegalArgumentException("Los nodos del flujo deben pertenecer a la misma version del proceso");
+            throw new BusinessRuleException("Los nodos del flujo deben pertenecer a la misma version del proceso");
+        }
+    }
+
+    private void validateDifferentNodes(Node originNode, Node destinationNode) {
+        if (originNode.getId().equals(destinationNode.getId())) {
+            throw new BusinessRuleException("El nodo origen y destino no pueden ser el mismo");
+        }
+    }
+
+    private FlowType parseFlowType(String type) {
+        if (type == null || type.isBlank()) {
+            return FlowType.SEQUENCE;
+        }
+        try {
+            return FlowType.valueOf(type.toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new BusinessRuleException("Tipo de flujo invalido: " + type);
         }
     }
 }

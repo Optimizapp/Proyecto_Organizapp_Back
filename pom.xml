@@ -71,6 +71,12 @@
 			<version>3.2.1</version>
 		</dependency>
 
+		<!-- Password hashing without enabling full Spring Security yet -->
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-crypto</artifactId>
+		</dependency>
+
 		<!-- DevTools -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

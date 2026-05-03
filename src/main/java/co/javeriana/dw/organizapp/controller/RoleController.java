@@ -28,10 +28,17 @@ public class RoleController {
     }
 
     @GetMapping
-    public ResponseEntity<List<RoleResponseDto>> getRoles(@RequestParam(required = false) Long processId) {
-        List<RoleResponseDto> roles = processId == null
-                ? roleService.findAll()
-                : roleService.findByProcessId(processId);
+    public ResponseEntity<List<RoleResponseDto>> getRoles(
+            @RequestParam(required = false) Long companyId,
+            @RequestParam(required = false) Long processId) {
+        List<RoleResponseDto> roles;
+        if (companyId != null) {
+            roles = roleService.findByCompanyId(companyId, processId);
+        } else if (processId != null) {
+            roles = roleService.findByProcessId(processId);
+        } else {
+            roles = roleService.findAll();
+        }
         return ResponseEntity.ok(roles);
     }
 
