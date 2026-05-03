@@ -10,6 +10,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -47,6 +48,11 @@ public class Company {
     @Column(length = 100)
     private String industry;
 
+    @Email(message = "El correo de contacto debe tener un formato valido")
+    @Size(max = 150, message = "El correo de contacto no puede superar los 150 caracteres")
+    @Column(name = "contact_email", length = 150)
+    private String contactEmail;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -62,6 +68,10 @@ public class Company {
     @ToString.Exclude
     @OneToMany(mappedBy = "company")
     private Set<Process> processes = new HashSet<>();
+
+    @ToString.Exclude
+    @OneToMany(mappedBy = "company")
+    private Set<Pool> pools = new HashSet<>();
 
     @PrePersist
     public void prePersist() {
@@ -92,5 +102,15 @@ public class Company {
     public void removeProcess(Process process) {
         processes.remove(process);
         process.setCompany(null);
+    }
+
+    public void addPool(Pool pool) {
+        pools.add(pool);
+        pool.setCompany(this);
+    }
+
+    public void removePool(Pool pool) {
+        pools.remove(pool);
+        pool.setCompany(null);
     }
 }

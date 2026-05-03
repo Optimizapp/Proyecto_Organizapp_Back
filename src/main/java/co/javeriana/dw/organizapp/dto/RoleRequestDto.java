@@ -14,6 +14,8 @@ public class RoleRequestDto {
     @Size(max = 255, message = "La descripcion no puede superar los 255 caracteres")
     private String descripcion;
 
-    @NotNull(message = "El proceso asociado es obligatorio")
+    @NotNull(message = "La empresa asociada es obligatoria")
+    private Long companyId;
+
     private Long processId;
 }

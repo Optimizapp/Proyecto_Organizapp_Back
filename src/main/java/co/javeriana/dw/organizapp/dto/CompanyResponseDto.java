@@ -12,4 +12,5 @@ public class CompanyResponseDto {
     private String name;
     private String nit;
     private String industry;
+    private String contactEmail;
 }

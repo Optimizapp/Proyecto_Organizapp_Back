@@ -8,4 +8,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface FlowRepository extends JpaRepository<Flow, Long> {
     List<Flow> findByVersionId(Long versionId);
+
+    boolean existsByNodoOrigenIdOrNodoDestinoId(Long originNodeId, Long destinationNodeId);
 }

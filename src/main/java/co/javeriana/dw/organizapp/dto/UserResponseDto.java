@@ -12,5 +12,6 @@ public class UserResponseDto {
     private Long roleId;
     private String roleNombre;
     private Long companyId;
+    private Boolean active;
     private LocalDateTime createdAt;
 }

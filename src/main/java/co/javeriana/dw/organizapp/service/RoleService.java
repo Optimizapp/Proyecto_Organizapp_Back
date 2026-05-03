@@ -6,6 +6,7 @@ import java.util.List;
 
 public interface RoleService {
     List<RoleResponseDto> findAll();
+    List<RoleResponseDto> findByCompanyId(Long companyId, Long processId);
     List<RoleResponseDto> findByProcessId(Long processId);
     RoleResponseDto findById(Long id);
     RoleResponseDto create(RoleRequestDto roleDto);

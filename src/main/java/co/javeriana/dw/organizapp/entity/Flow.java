@@ -2,6 +2,8 @@ package co.javeriana.dw.organizapp.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -42,6 +44,11 @@ public class Flow {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "destination_node_id", nullable = false)
     private Node nodoDestino;
+
+    @NotNull(message = "El tipo de flujo es obligatorio")
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private FlowType type = FlowType.SEQUENCE;
 
     @Size(max = 500, message = "La condicion no puede superar los 500 caracteres")
     @Column(name = "condicion", length = 500)

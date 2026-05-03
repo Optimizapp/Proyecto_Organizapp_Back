@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Deprecated(since = "0.0.1", forRemoval = false)
 public class CompanyRequestDto {
 
     @NotBlank(message = "El nombre es obligatorio")

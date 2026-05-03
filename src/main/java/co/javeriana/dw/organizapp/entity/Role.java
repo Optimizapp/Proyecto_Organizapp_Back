@@ -12,7 +12,6 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -27,7 +26,7 @@ import java.util.Set;
 @Table(
     name = "roles",
     uniqueConstraints = {
-        @UniqueConstraint(name = "uk_roles_process_id_nombre", columnNames = {"process_id", "nombre"})
+        @UniqueConstraint(name = "uk_roles_company_process_nombre", columnNames = {"company_id", "process_id", "nombre"})
     }
 )
 @Getter
@@ -49,10 +48,13 @@ public class Role {
     @Column(name = "descripcion", length = 255)
     private String descripcion;
 
-    @NotNull(message = "El proceso asociado al rol es obligatorio")
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "process_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "process_id")
     private Process proceso;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "company_id", nullable = false)
+    private Company company;
 
     @ToString.Exclude
     @OneToMany(mappedBy = "rol", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)

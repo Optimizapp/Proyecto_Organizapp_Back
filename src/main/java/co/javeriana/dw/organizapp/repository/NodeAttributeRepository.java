@@ -8,4 +8,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface NodeAttributeRepository extends JpaRepository<NodeAttribute, Long> {
     List<NodeAttribute> findByNodoId(Long nodeId);
+
+    boolean existsByNodoIdAndClave(Long nodeId, String clave);
 }

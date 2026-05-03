@@ -10,5 +10,6 @@ public interface ProcessVersionService {
     ProcessVersionResponseDto findById(Long id);
     ProcessVersionResponseDto create(ProcessVersionRequestDto processVersionDto);
     ProcessVersionResponseDto update(Long id, ProcessVersionRequestDto processVersionDto);
+    ProcessVersionResponseDto publish(Long id);
     void delete(Long id);
 }
