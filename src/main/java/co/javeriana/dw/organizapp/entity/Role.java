@@ -48,8 +48,8 @@ public class Role {
     @Column(name = "descripcion", length = 255)
     private String descripcion;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "process_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "process_id", nullable = true)
     private Process proceso;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
