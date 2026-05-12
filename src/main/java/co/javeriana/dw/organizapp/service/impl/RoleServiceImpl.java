@@ -130,9 +130,12 @@ public class RoleServiceImpl implements RoleService {
     }
 
     private RoleResponseDto toDto(Role role) {
-        RoleResponseDto dto = modelMapper.map(role, RoleResponseDto.class);
-        dto.setProcessId(role.getProceso() == null ? null : role.getProceso().getId());
+        RoleResponseDto dto = new RoleResponseDto();
+        dto.setId(role.getId());
+        dto.setNombre(role.getNombre());
+        dto.setDescripcion(role.getDescripcion());
         dto.setCompanyId(role.getCompany() == null ? null : role.getCompany().getId());
+        dto.setProcessId(role.getProceso() == null ? null : role.getProceso().getId());
         return dto;
     }
 
