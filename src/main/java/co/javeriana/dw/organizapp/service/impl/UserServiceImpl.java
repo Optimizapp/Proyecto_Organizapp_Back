@@ -106,6 +106,9 @@ public class UserServiceImpl implements UserService {
         if (userDto.getActive() != null) {
             existingUser.setActivo(userDto.getActive());
         }
+        if (userDto.getPassword() != null && !userDto.getPassword().isBlank()) {
+            existingUser.setContrasenaHash(passwordEncoder.encode(userDto.getPassword()));
+        }
 
         return convertToDto(userRepository.save(existingUser));
     }
