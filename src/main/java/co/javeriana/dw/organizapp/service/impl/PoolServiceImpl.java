@@ -6,10 +6,8 @@ import co.javeriana.dw.organizapp.dto.UpdatePoolRequest;
 import co.javeriana.dw.organizapp.entity.Company;
 import co.javeriana.dw.organizapp.entity.Pool;
 import co.javeriana.dw.organizapp.exception.DuplicateResourceException;
-import co.javeriana.dw.organizapp.exception.ResourceInUseException;
 import co.javeriana.dw.organizapp.exception.ResourceNotFoundException;
 import co.javeriana.dw.organizapp.repository.CompanyRepository;
-import co.javeriana.dw.organizapp.repository.LaneRepository;
 import co.javeriana.dw.organizapp.repository.PoolRepository;
 import co.javeriana.dw.organizapp.service.PoolService;
 import java.util.List;
@@ -25,17 +23,14 @@ public class PoolServiceImpl implements PoolService {
 
     private final PoolRepository poolRepository;
     private final CompanyRepository companyRepository;
-    private final LaneRepository laneRepository;
     private final ModelMapper modelMapper;
 
     public PoolServiceImpl(
             PoolRepository poolRepository,
             CompanyRepository companyRepository,
-            LaneRepository laneRepository,
             ModelMapper modelMapper) {
         this.poolRepository = poolRepository;
         this.companyRepository = companyRepository;
-        this.laneRepository = laneRepository;
         this.modelMapper = modelMapper;
     }
 
@@ -97,10 +92,8 @@ public class PoolServiceImpl implements PoolService {
     @Transactional
     public void delete(Long id) {
         Pool pool = findPool(id);
-        if (laneRepository.existsByPoolId(id)) {
-            throw new ResourceInUseException("No se puede eliminar el pool porque tiene lanes asociadas");
-        }
-        poolRepository.delete(pool);
+        pool.setActive(false);
+        poolRepository.save(pool);
     }
 
     private PoolResponse toDto(Pool pool) {

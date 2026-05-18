@@ -14,7 +14,6 @@ import co.javeriana.dw.organizapp.entity.Pool;
 import co.javeriana.dw.organizapp.exception.DuplicateResourceException;
 import co.javeriana.dw.organizapp.exception.ResourceNotFoundException;
 import co.javeriana.dw.organizapp.repository.LaneRepository;
-import co.javeriana.dw.organizapp.repository.NodeRepository;
 import co.javeriana.dw.organizapp.repository.PoolRepository;
 import java.util.List;
 import java.util.Optional;
@@ -26,15 +25,13 @@ class LaneServiceImplTest {
 
     private LaneRepository laneRepository;
     private PoolRepository poolRepository;
-    private NodeRepository nodeRepository;
     private LaneServiceImpl laneService;
 
     @BeforeEach
     void setUp() {
         laneRepository = mock(LaneRepository.class);
         poolRepository = mock(PoolRepository.class);
-        nodeRepository = mock(NodeRepository.class);
-        laneService = new LaneServiceImpl(laneRepository, poolRepository, nodeRepository, new ModelMapper());
+        laneService = new LaneServiceImpl(laneRepository, poolRepository, new ModelMapper());
     }
 
     @Test
@@ -93,14 +90,14 @@ class LaneServiceImplTest {
     }
 
     @Test
-    void deleteLaneRejectsLaneWithAssociatedNodes() {
+    void deleteLaneSetsActiveFalse() {
         Lane lane = lane(20L, "Administracion", pool(10L));
         when(laneRepository.findById(20L)).thenReturn(Optional.of(lane));
-        when(nodeRepository.existsByLaneId(20L)).thenReturn(true);
+        when(laneRepository.save(any(Lane.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        assertThatThrownBy(() -> laneService.delete(20L))
-                .isInstanceOf(co.javeriana.dw.organizapp.exception.ResourceInUseException.class)
-                .hasMessageContaining("No se puede eliminar la lane porque tiene nodos asociados");
+        laneService.delete(20L);
+
+        assertThat(lane.getActive()).isFalse();
     }
 
     private static CreateLaneRequest createLaneRequest(String name, Long poolId) {

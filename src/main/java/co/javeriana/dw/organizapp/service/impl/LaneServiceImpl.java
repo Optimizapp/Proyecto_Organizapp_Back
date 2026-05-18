@@ -6,10 +6,8 @@ import co.javeriana.dw.organizapp.dto.UpdateLaneRequest;
 import co.javeriana.dw.organizapp.entity.Lane;
 import co.javeriana.dw.organizapp.entity.Pool;
 import co.javeriana.dw.organizapp.exception.DuplicateResourceException;
-import co.javeriana.dw.organizapp.exception.ResourceInUseException;
 import co.javeriana.dw.organizapp.exception.ResourceNotFoundException;
 import co.javeriana.dw.organizapp.repository.LaneRepository;
-import co.javeriana.dw.organizapp.repository.NodeRepository;
 import co.javeriana.dw.organizapp.repository.PoolRepository;
 import co.javeriana.dw.organizapp.service.LaneService;
 import java.util.List;
@@ -25,17 +23,14 @@ public class LaneServiceImpl implements LaneService {
 
     private final LaneRepository laneRepository;
     private final PoolRepository poolRepository;
-    private final NodeRepository nodeRepository;
     private final ModelMapper modelMapper;
 
     public LaneServiceImpl(
             LaneRepository laneRepository,
             PoolRepository poolRepository,
-            NodeRepository nodeRepository,
             ModelMapper modelMapper) {
         this.laneRepository = laneRepository;
         this.poolRepository = poolRepository;
-        this.nodeRepository = nodeRepository;
         this.modelMapper = modelMapper;
     }
 
@@ -99,10 +94,8 @@ public class LaneServiceImpl implements LaneService {
     @Transactional
     public void delete(Long id) {
         Lane lane = findLane(id);
-        if (nodeRepository.existsByLaneId(id)) {
-            throw new ResourceInUseException("No se puede eliminar la lane porque tiene nodos asociados");
-        }
-        laneRepository.delete(lane);
+        lane.setActive(false);
+        laneRepository.save(lane);
     }
 
     private LaneResponse toDto(Lane lane) {

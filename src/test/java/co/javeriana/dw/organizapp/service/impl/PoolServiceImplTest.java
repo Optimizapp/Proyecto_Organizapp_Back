@@ -13,7 +13,6 @@ import co.javeriana.dw.organizapp.entity.Pool;
 import co.javeriana.dw.organizapp.exception.DuplicateResourceException;
 import co.javeriana.dw.organizapp.exception.ResourceNotFoundException;
 import co.javeriana.dw.organizapp.repository.CompanyRepository;
-import co.javeriana.dw.organizapp.repository.LaneRepository;
 import co.javeriana.dw.organizapp.repository.PoolRepository;
 import java.util.List;
 import java.util.Optional;
@@ -25,15 +24,13 @@ class PoolServiceImplTest {
 
     private PoolRepository poolRepository;
     private CompanyRepository companyRepository;
-    private LaneRepository laneRepository;
     private PoolServiceImpl poolService;
 
     @BeforeEach
     void setUp() {
         poolRepository = mock(PoolRepository.class);
         companyRepository = mock(CompanyRepository.class);
-        laneRepository = mock(LaneRepository.class);
-        poolService = new PoolServiceImpl(poolRepository, companyRepository, laneRepository, new ModelMapper());
+        poolService = new PoolServiceImpl(poolRepository, companyRepository, new ModelMapper());
     }
 
     @Test
