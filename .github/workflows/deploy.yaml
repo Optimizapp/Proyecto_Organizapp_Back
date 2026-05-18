@@ -53,4 +53,3 @@ jobs:
       run: sudo microk8s kubectl apply -f k8s/deployment.yaml
     - name: Restart Kubernetes deployment
       run: sudo microk8s kubectl rollout restart deployment/organizapp-backend -n grupo14 
-      
