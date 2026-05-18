@@ -85,7 +85,7 @@ class CompanyControllerTest {
                                   "contactEmail":"contact@acme.com",
                                   "industry":"Tech",
                                   "adminName":"Admin",
-                                  "adminEmail":"admin@acme.com",
+                                  "adminEmail":"adminEmail@gmail.com",
                                   "adminPassword":"password123"
                                 }
                                 """))
