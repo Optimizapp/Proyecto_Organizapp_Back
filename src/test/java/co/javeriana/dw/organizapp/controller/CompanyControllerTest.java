@@ -59,7 +59,7 @@ class CompanyControllerTest {
         UserResponseDto admin = new UserResponseDto();
         admin.setId(5L);
         admin.setName("Admin");
-        admin.setEmail("admin@acme.com");
+        admin.setEmail("adminEmail@gmail.com");
         admin.setCompanyId(1L);
         admin.setRoleId(10L);
         admin.setRoleNombre("ADMIN");
@@ -91,7 +91,7 @@ class CompanyControllerTest {
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.company.id").value(1))
-                .andExpect(jsonPath("$.adminUser.email").value("admin@acme.com"))
+                .andExpect(jsonPath("$.adminUser.email").value("adminEmail@gmail.com"))
                 .andExpect(jsonPath("$.adminUser.password").doesNotExist())
                 .andExpect(jsonPath("$.adminUser.contrasenaHash").doesNotExist())
                 .andExpect(jsonPath("$.roles[0].nombre").value("ADMIN"))

@@ -60,6 +60,22 @@ class AuthControllerTest {
     }
 
     @Test
+    void loginWithAdminEmailAliasReturns200AndToken() throws Exception {
+        when(userRepository.findByEmail("adminEmail@gmail.com"))
+                .thenReturn(Optional.of(buildActiveUser("adminEmail@gmail.com", "adminPassword")));
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"adminEmail":"adminEmail@gmail.com","adminPassword":"adminPassword"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").isNotEmpty())
+                .andExpect(jsonPath("$.type").value("Bearer"))
+                .andExpect(jsonPath("$.userEmail").value("adminEmail@gmail.com"));
+    }
+
+    @Test
     void loginWithUnknownEmailReturns401() throws Exception {
         when(userRepository.findByEmail("unknown@test.com")).thenReturn(Optional.empty());
 
