@@ -86,7 +86,7 @@ class CompanyControllerTest {
                                   "industry":"Tech",
                                   "adminName":"Admin",
                                   "adminEmail":"adminEmail@gmail.com",
-                                  "adminPassword":"password123"
+                                  "adminPassword":"12345678"
                                 }
                                 """))
                 .andExpect(status().isCreated())
