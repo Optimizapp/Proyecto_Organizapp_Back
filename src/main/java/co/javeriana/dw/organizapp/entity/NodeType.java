@@ -1,18 +1,14 @@
 package co.javeriana.dw.organizapp.entity;
 
 public enum NodeType {
-    START_EVENT,
-    END_EVENT,
-    TASK,
-    GATEWAY,
-    MESSAGE_THROW,
-    MESSAGE_CATCH,
-    SUBPROCESS,
-
-    // Valores legacy conservados para no romper datos existentes ya persistidos.
     INICIO,
+    FIN,
     TAREA,
     DECISION,
-    FIN,
-    SUBPROCESO
+    SUBPROCESO,
+    MESSAGE_THROW,
+    MESSAGE_CATCH,
+    GATEWAY,
+    END_EVENT,
+    START_EVENT
 }
