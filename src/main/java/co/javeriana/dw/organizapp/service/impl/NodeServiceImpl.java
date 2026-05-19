@@ -145,17 +145,12 @@ public class NodeServiceImpl implements NodeService {
     }
 
     private NodeType parseNodeType(String nodeType) {
+        if (nodeType == null || nodeType.isBlank()) {
+            throw new BusinessRuleException("Tipo de nodo invalido: " + nodeType);
+        }
         try {
-            NodeType parsed = NodeType.valueOf(nodeType.toUpperCase());
-            return switch (parsed) {
-                case INICIO -> NodeType.START_EVENT;
-                case FIN -> NodeType.END_EVENT;
-                case TAREA -> NodeType.TASK;
-                case DECISION -> NodeType.GATEWAY;
-                case SUBPROCESO -> NodeType.SUBPROCESS;
-                default -> parsed;
-            };
-        } catch (IllegalArgumentException | NullPointerException ex) {
+            return NodeType.valueOf(nodeType.toUpperCase());
+        } catch (IllegalArgumentException ex) {
             throw new BusinessRuleException("Tipo de nodo invalido: " + nodeType);
         }
     }
@@ -172,11 +167,12 @@ public class NodeServiceImpl implements NodeService {
     }
 
     private void validateGatewayRules(NodeType nodeType, GatewayType gatewayType) {
-        if (nodeType == NodeType.GATEWAY && gatewayType == null) {
-            throw new BusinessRuleException("gatewayType es obligatorio cuando type es GATEWAY");
+        boolean isGatewayType = nodeType == NodeType.GATEWAY || nodeType == NodeType.DECISION;
+        if (isGatewayType && gatewayType == null) {
+            throw new BusinessRuleException("gatewayType es obligatorio cuando type es GATEWAY o DECISION");
         }
-        if (nodeType != NodeType.GATEWAY && gatewayType != null) {
-            throw new BusinessRuleException("gatewayType solo es permitido cuando type es GATEWAY");
+        if (!isGatewayType && gatewayType != null) {
+            throw new BusinessRuleException("gatewayType solo es permitido cuando type es GATEWAY o DECISION");
         }
     }
 

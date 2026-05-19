@@ -54,7 +54,7 @@ class NodeServiceImplTest {
         Pool pool = pool(10L, company);
         ProcessVersion version = version(1L, process(company, pool));
         Lane lane = lane(10L, pool);
-        NodeRequestDto request = nodeRequest("TASK");
+        NodeRequestDto request = nodeRequest("TAREA");
         request.setLaneId(10L);
         when(processVersionRepository.findById(1L)).thenReturn(Optional.of(version));
         when(laneRepository.findById(10L)).thenReturn(Optional.of(lane));
@@ -67,7 +67,7 @@ class NodeServiceImplTest {
         NodeResponseDto response = nodeService.create(request);
 
         assertThat(response.getId()).isEqualTo(20L);
-        assertThat(response.getTipo()).isEqualTo("TASK");
+        assertThat(response.getTipo()).isEqualTo("TAREA");
         assertThat(response.getLaneId()).isEqualTo(10L);
     }
 
@@ -75,14 +75,14 @@ class NodeServiceImplTest {
     void createGatewayNodeRejectsMissingGatewayType() {
         when(processVersionRepository.findById(1L)).thenReturn(Optional.of(version(1L, process(company(1L), null))));
 
-        assertThatThrownBy(() -> nodeService.create(nodeRequest("GATEWAY")))
+        assertThatThrownBy(() -> nodeService.create(nodeRequest("DECISION")))
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessageContaining("gatewayType es obligatorio");
     }
 
     @Test
     void createNonGatewayNodeRejectsGatewayType() {
-        NodeRequestDto request = nodeRequest("TASK");
+        NodeRequestDto request = nodeRequest("TAREA");
         request.setGatewayType("EXCLUSIVE");
         when(processVersionRepository.findById(1L)).thenReturn(Optional.of(version(1L, process(company(1L), null))));
 
@@ -93,7 +93,7 @@ class NodeServiceImplTest {
 
     @Test
     void createNodeRejectsMissingLane() {
-        NodeRequestDto request = nodeRequest("TASK");
+        NodeRequestDto request = nodeRequest("TAREA");
         request.setLaneId(99L);
         when(processVersionRepository.findById(1L)).thenReturn(Optional.of(version(1L, process(company(1L), null))));
         when(laneRepository.findById(99L)).thenReturn(Optional.empty());
@@ -111,7 +111,7 @@ class NodeServiceImplTest {
         Pool lanePool = pool(20L, laneCompany);
         ProcessVersion version = version(1L, process(processCompany, processPool));
         Lane lane = lane(30L, lanePool);
-        NodeRequestDto request = nodeRequest("TASK");
+        NodeRequestDto request = nodeRequest("TAREA");
         request.setLaneId(30L);
         when(processVersionRepository.findById(1L)).thenReturn(Optional.of(version));
         when(laneRepository.findById(30L)).thenReturn(Optional.of(lane));
@@ -130,7 +130,7 @@ class NodeServiceImplTest {
         Lane lane = lane(30L, otherPool);
         Node existingNode = new Node();
         existingNode.setId(40L);
-        NodeRequestDto request = nodeRequest("TASK");
+        NodeRequestDto request = nodeRequest("TAREA");
         request.setLaneId(30L);
         when(nodeRepository.findById(40L)).thenReturn(Optional.of(existingNode));
         when(processVersionRepository.findById(1L)).thenReturn(Optional.of(version));
@@ -151,6 +151,41 @@ class NodeServiceImplTest {
         assertThatThrownBy(() -> nodeService.delete(20L))
                 .isInstanceOf(ResourceInUseException.class)
                 .hasMessageContaining("No se puede eliminar el nodo porque tiene flujos conectados");
+    }
+
+    @Test
+    void createNodeWithTipoINICIO() {
+        Company company = company(1L);
+        Pool pool = pool(10L, company);
+        ProcessVersion version = version(1L, process(company, pool));
+        NodeRequestDto request = nodeRequest("INICIO");
+        when(processVersionRepository.findById(1L)).thenReturn(Optional.of(version));
+        when(nodeRepository.save(any(Node.class))).thenAnswer(invocation -> {
+            Node node = invocation.getArgument(0);
+            node.setId(21L);
+            return node;
+        });
+
+        NodeResponseDto response = nodeService.create(request);
+        assertThat(response.getTipo()).isEqualTo("INICIO");
+    }
+
+    @Test
+    void createNodeWithTipoDECISION() {
+        Company company = company(1L);
+        Pool pool = pool(10L, company);
+        ProcessVersion version = version(1L, process(company, pool));
+        NodeRequestDto request = nodeRequest("DECISION");
+        request.setGatewayType("EXCLUSIVE");
+        when(processVersionRepository.findById(1L)).thenReturn(Optional.of(version));
+        when(nodeRepository.save(any(Node.class))).thenAnswer(invocation -> {
+            Node node = invocation.getArgument(0);
+            node.setId(22L);
+            return node;
+        });
+
+        NodeResponseDto response = nodeService.create(request);
+        assertThat(response.getTipo()).isEqualTo("DECISION");
     }
 
     private static NodeRequestDto nodeRequest(String type) {
