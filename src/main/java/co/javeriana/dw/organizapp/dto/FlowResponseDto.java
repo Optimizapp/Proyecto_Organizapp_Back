@@ -8,6 +8,7 @@ public class FlowResponseDto {
     private Long versionId;
     private Long originNodeId;
     private Long destinationNodeId;
+    private String type;
     private String condicion;
     private String etiqueta;
 }

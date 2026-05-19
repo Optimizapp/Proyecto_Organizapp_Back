@@ -4,6 +4,7 @@ import co.javeriana.dw.organizapp.dto.PermissionRequestDto;
 import co.javeriana.dw.organizapp.dto.PermissionResponseDto;
 import co.javeriana.dw.organizapp.entity.Permission;
 import co.javeriana.dw.organizapp.entity.Role;
+import co.javeriana.dw.organizapp.exception.DuplicateResourceException;
 import co.javeriana.dw.organizapp.exception.ResourceNotFoundException;
 import co.javeriana.dw.organizapp.repository.PermissionRepository;
 import co.javeriana.dw.organizapp.repository.RoleRepository;
@@ -61,6 +62,7 @@ public class PermissionServiceImpl implements PermissionService {
     public PermissionResponseDto create(PermissionRequestDto permissionDto) {
         Role role = roleRepository.findById(permissionDto.getRoleId())
                 .orElseThrow(() -> new ResourceNotFoundException("Rol no encontrado con ID: " + permissionDto.getRoleId()));
+        validatePermissionCodeAvailable(role.getId(), permissionDto.getCodigo());
 
         Permission permission = modelMapper.map(permissionDto, Permission.class);
         permission.setRol(role);
@@ -75,6 +77,10 @@ public class PermissionServiceImpl implements PermissionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Permiso no encontrado con ID: " + id));
         Role role = roleRepository.findById(permissionDto.getRoleId())
                 .orElseThrow(() -> new ResourceNotFoundException("Rol no encontrado con ID: " + permissionDto.getRoleId()));
+        if (!existingPermission.getRol().getId().equals(role.getId())
+                || !existingPermission.getCodigo().equals(permissionDto.getCodigo())) {
+            validatePermissionCodeAvailable(role.getId(), permissionDto.getCodigo());
+        }
 
         existingPermission.setCodigo(permissionDto.getCodigo());
         existingPermission.setDescripcion(permissionDto.getDescripcion());
@@ -95,5 +101,11 @@ public class PermissionServiceImpl implements PermissionService {
         PermissionResponseDto dto = modelMapper.map(permission, PermissionResponseDto.class);
         dto.setRoleId(permission.getRol().getId());
         return dto;
+    }
+
+    private void validatePermissionCodeAvailable(Long roleId, String code) {
+        if (permissionRepository.existsByRolIdAndCodigo(roleId, code)) {
+            throw new DuplicateResourceException("Ya existe un permiso con codigo: " + code);
+        }
     }
 }

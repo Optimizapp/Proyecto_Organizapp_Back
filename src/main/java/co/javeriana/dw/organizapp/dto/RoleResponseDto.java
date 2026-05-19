@@ -8,4 +8,5 @@ public class RoleResponseDto {
     private String nombre;
     private String descripcion;
     private Long processId;
+    private Long companyId;
 }

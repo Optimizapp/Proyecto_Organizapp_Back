@@ -6,6 +6,8 @@ import co.javeriana.dw.organizapp.entity.Process;
 import co.javeriana.dw.organizapp.entity.ProcessVersion;
 import co.javeriana.dw.organizapp.entity.ProcessVersionStatus;
 import co.javeriana.dw.organizapp.entity.User;
+import co.javeriana.dw.organizapp.exception.BusinessRuleException;
+import co.javeriana.dw.organizapp.exception.DuplicateResourceException;
 import co.javeriana.dw.organizapp.exception.ResourceNotFoundException;
 import co.javeriana.dw.organizapp.repository.ProcessRepository;
 import co.javeriana.dw.organizapp.repository.ProcessVersionRepository;
@@ -67,8 +69,10 @@ public class ProcessVersionServiceImpl implements ProcessVersionService {
     public ProcessVersionResponseDto create(ProcessVersionRequestDto processVersionDto) {
         Process process = findProcess(processVersionDto.getProcessId());
         User createdBy = findUser(processVersionDto.getCreatedByUserId());
+        validateVersionNumberAvailable(process.getId(), processVersionDto.getNumeroVersion());
 
-        ProcessVersion processVersion = modelMapper.map(processVersionDto, ProcessVersion.class);
+        ProcessVersion processVersion = new ProcessVersion();
+        processVersion.setNumeroVersion(processVersionDto.getNumeroVersion());
         processVersion.setProceso(process);
         processVersion.setCreadoPor(createdBy);
         processVersion.setEstado(parseStatus(processVersionDto.getEstado()));
@@ -83,6 +87,10 @@ public class ProcessVersionServiceImpl implements ProcessVersionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Version de proceso no encontrada con ID: " + id));
         Process process = findProcess(processVersionDto.getProcessId());
         User createdBy = findUser(processVersionDto.getCreatedByUserId());
+        if (!existingProcessVersion.getProceso().getId().equals(process.getId())
+                || !existingProcessVersion.getNumeroVersion().equals(processVersionDto.getNumeroVersion())) {
+            validateVersionNumberAvailable(process.getId(), processVersionDto.getNumeroVersion());
+        }
 
         existingProcessVersion.setProceso(process);
         existingProcessVersion.setNumeroVersion(processVersionDto.getNumeroVersion());
@@ -90,6 +98,15 @@ public class ProcessVersionServiceImpl implements ProcessVersionService {
         existingProcessVersion.setEstado(parseStatus(processVersionDto.getEstado()));
 
         return toDto(processVersionRepository.save(existingProcessVersion));
+    }
+
+    @Override
+    @Transactional
+    public ProcessVersionResponseDto publish(Long id) {
+        ProcessVersion processVersion = processVersionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Version de proceso no encontrada con ID: " + id));
+        processVersion.setEstado(ProcessVersionStatus.PUBLICADA);
+        return toDto(processVersionRepository.save(processVersion));
     }
 
     @Override
@@ -122,7 +139,13 @@ public class ProcessVersionServiceImpl implements ProcessVersionService {
         try {
             return ProcessVersionStatus.valueOf(status.toUpperCase());
         } catch (IllegalArgumentException | NullPointerException ex) {
-            return ProcessVersionStatus.BORRADOR;
+            throw new BusinessRuleException("Estado de version de proceso invalido: " + status);
+        }
+    }
+
+    private void validateVersionNumberAvailable(Long processId, Integer versionNumber) {
+        if (processVersionRepository.existsByProcesoIdAndNumeroVersion(processId, versionNumber)) {
+            throw new DuplicateResourceException("Ya existe la version " + versionNumber + " para el proceso: " + processId);
         }
     }
 }

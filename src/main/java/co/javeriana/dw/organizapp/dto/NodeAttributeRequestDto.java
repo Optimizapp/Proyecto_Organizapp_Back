@@ -17,6 +17,6 @@ public class NodeAttributeRequestDto {
     @Size(max = 2000, message = "El valor del atributo no puede superar los 2000 caracteres")
     private String valor;
 
-    @NotNull(message = "El tipo del atributo es obligatorio")
+    @NotBlank(message = "El tipo del atributo es obligatorio")
     private String tipo;
 }

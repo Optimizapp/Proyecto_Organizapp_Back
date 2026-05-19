@@ -5,18 +5,21 @@ import co.javeriana.dw.organizapp.dto.NodeAttributeResponseDto;
 import co.javeriana.dw.organizapp.entity.Node;
 import co.javeriana.dw.organizapp.entity.NodeAttribute;
 import co.javeriana.dw.organizapp.entity.NodeAttributeType;
+import co.javeriana.dw.organizapp.exception.BusinessRuleException;
+import co.javeriana.dw.organizapp.exception.DuplicateResourceException;
 import co.javeriana.dw.organizapp.exception.ResourceNotFoundException;
 import co.javeriana.dw.organizapp.repository.NodeAttributeRepository;
 import co.javeriana.dw.organizapp.repository.NodeRepository;
 import co.javeriana.dw.organizapp.service.NodeAttributeService;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class NodeAttributeServiceImpl implements NodeAttributeService {
+
+    private static final String NODE_ATTRIBUTE_NOT_FOUND_MESSAGE = "Atributo de nodo no encontrado con ID: ";
 
     private final NodeAttributeRepository nodeAttributeRepository;
     private final NodeRepository nodeRepository;
@@ -36,7 +39,7 @@ public class NodeAttributeServiceImpl implements NodeAttributeService {
     public List<NodeAttributeResponseDto> findAll() {
         return nodeAttributeRepository.findAll().stream()
                 .map(this::toDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -45,14 +48,14 @@ public class NodeAttributeServiceImpl implements NodeAttributeService {
         findNode(nodeId);
         return nodeAttributeRepository.findByNodoId(nodeId).stream()
                 .map(this::toDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public NodeAttributeResponseDto findById(Long id) {
         NodeAttribute attribute = nodeAttributeRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Atributo de nodo no encontrado con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(NODE_ATTRIBUTE_NOT_FOUND_MESSAGE + id));
         return toDto(attribute);
     }
 
@@ -60,6 +63,7 @@ public class NodeAttributeServiceImpl implements NodeAttributeService {
     @Transactional
     public NodeAttributeResponseDto create(NodeAttributeRequestDto nodeAttributeDto) {
         Node node = findNode(nodeAttributeDto.getNodeId());
+        validateAttributeKeyAvailable(node.getId(), nodeAttributeDto.getClave());
 
         NodeAttribute attribute = modelMapper.map(nodeAttributeDto, NodeAttribute.class);
         attribute.setNodo(node);
@@ -72,8 +76,12 @@ public class NodeAttributeServiceImpl implements NodeAttributeService {
     @Transactional
     public NodeAttributeResponseDto update(Long id, NodeAttributeRequestDto nodeAttributeDto) {
         NodeAttribute existingAttribute = nodeAttributeRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Atributo de nodo no encontrado con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(NODE_ATTRIBUTE_NOT_FOUND_MESSAGE + id));
         Node node = findNode(nodeAttributeDto.getNodeId());
+        if (!existingAttribute.getNodo().getId().equals(node.getId())
+                || !existingAttribute.getClave().equals(nodeAttributeDto.getClave())) {
+            validateAttributeKeyAvailable(node.getId(), nodeAttributeDto.getClave());
+        }
 
         existingAttribute.setNodo(node);
         existingAttribute.setClave(nodeAttributeDto.getClave());
@@ -87,7 +95,7 @@ public class NodeAttributeServiceImpl implements NodeAttributeService {
     @Transactional
     public void delete(Long id) {
         NodeAttribute attribute = nodeAttributeRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Atributo de nodo no encontrado con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(NODE_ATTRIBUTE_NOT_FOUND_MESSAGE + id));
         nodeAttributeRepository.delete(attribute);
     }
 
@@ -107,7 +115,13 @@ public class NodeAttributeServiceImpl implements NodeAttributeService {
         try {
             return NodeAttributeType.valueOf(attributeType.toUpperCase());
         } catch (IllegalArgumentException | NullPointerException ex) {
-            throw new IllegalArgumentException("Tipo de atributo invalido: " + attributeType);
+            throw new BusinessRuleException("Tipo de atributo invalido: " + attributeType);
+        }
+    }
+
+    private void validateAttributeKeyAvailable(Long nodeId, String key) {
+        if (nodeAttributeRepository.existsByNodoIdAndClave(nodeId, key)) {
+            throw new DuplicateResourceException("Ya existe un atributo con clave: " + key);
         }
     }
 }

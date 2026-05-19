@@ -8,4 +8,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface NodeRepository extends JpaRepository<Node, Long> {
     List<Node> findByVersionId(Long versionId);
+
+    boolean existsByLaneId(Long laneId);
 }

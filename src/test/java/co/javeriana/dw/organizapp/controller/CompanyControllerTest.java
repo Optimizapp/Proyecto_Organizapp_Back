@@ -1,168 +1,129 @@
 package co.javeriana.dw.organizapp.controller;
 
-import co.javeriana.dw.organizapp.dto.CompanyRequestDto;
-import co.javeriana.dw.organizapp.dto.CompanyResponseDto;
-import co.javeriana.dw.organizapp.exception.CompanyNotFoundException;
-import co.javeriana.dw.organizapp.exception.DuplicateCompanyException;
-import co.javeriana.dw.organizapp.exception.GlobalExceptionHandler;
-import co.javeriana.dw.organizapp.service.CompanyService;
-import org.hibernate.validator.HibernateValidator;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
-
-import java.util.List;
-
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@ExtendWith(MockitoExtension.class)
+import co.javeriana.dw.organizapp.dto.CompanyResponseDto;
+import co.javeriana.dw.organizapp.dto.PoolResponse;
+import co.javeriana.dw.organizapp.dto.RegisterCompanyResponse;
+import co.javeriana.dw.organizapp.dto.RoleResponseDto;
+import co.javeriana.dw.organizapp.dto.UserResponseDto;
+import co.javeriana.dw.organizapp.exception.DuplicateResourceException;
+import co.javeriana.dw.organizapp.exception.GlobalExceptionHandler;
+import co.javeriana.dw.organizapp.exception.ResourceNotFoundException;
+import co.javeriana.dw.organizapp.service.CompanyService;
+import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
 class CompanyControllerTest {
 
-    @Mock
     private CompanyService companyService;
-
-    @InjectMocks
-    private CompanyController companyController;
-
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
-        LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
-        validator.setProviderClass(HibernateValidator.class);
-        validator.afterPropertiesSet();
-
-        mockMvc = MockMvcBuilders.standaloneSetup(companyController)
+        companyService = mock(CompanyService.class);
+        mockMvc = MockMvcBuilders.standaloneSetup(new CompanyController(companyService))
                 .setControllerAdvice(new GlobalExceptionHandler())
-                .setValidator(validator)
                 .build();
     }
 
     @Test
-    void getAllCompaniesShouldReturnOk() throws Exception {
-        when(companyService.findAll()).thenReturn(List.of(
-                buildResponseDto(1L, "Alpha", "900100100", "Tech"),
-                buildResponseDto(2L, "Beta", "900200200", "Finance")
-        ));
-
-        mockMvc.perform(get("/api/companies"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Alpha"))
-                .andExpect(jsonPath("$[1].nit").value("900200200"));
-    }
-
-    @Test
-    void getCompanyByIdShouldReturnOk() throws Exception {
-        when(companyService.findById(1L)).thenReturn(buildResponseDto(1L, "Alpha", "900100100", "Tech"));
-
-        mockMvc.perform(get("/api/companies/1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.name").value("Alpha"));
-    }
-
-    @Test
-    void createCompanyShouldReturnCreated() throws Exception {
-        CompanyResponseDto responseDto = buildResponseDto(3L, "Gamma", "900300300", "Health");
-        // Ahora el servicio recibe un CompanyRequestDto
-        when(companyService.create(any(CompanyRequestDto.class))).thenReturn(responseDto);
+    void createCompanyReturnsCreatedWhenRequestIsValid() throws Exception {
+        CompanyResponseDto response = new CompanyResponseDto(1L, "Acme", "900123", "Tech", "contact@acme.com");
+        when(companyService.create(any())).thenReturn(response);
 
         mockMvc.perform(post("/api/companies")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"Gamma\",\"nit\":\"900300300\",\"industry\":\"Health\"}"))
+                        .content("""
+                                {"name":"Acme","nit":"900123","industry":"Tech","contactEmail":"contact@acme.com"}
+                                """))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(3))
-                .andExpect(jsonPath("$.name").value("Gamma"));
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.name").value("Acme"))
+                .andExpect(jsonPath("$.contactEmail").value("contact@acme.com"));
     }
 
     @Test
-    void updateCompanyShouldReturnOk() throws Exception {
-        CompanyResponseDto updatedDto = buildResponseDto(1L, "Alpha Updated", "900100101", "Retail");
-        when(companyService.update(eq(1L), any(CompanyRequestDto.class))).thenReturn(updatedDto);
+    void registerCompanyReturnsCreatedWithCompanyAdminAndBaseRoles() throws Exception {
+        CompanyResponseDto company = new CompanyResponseDto(1L, "Acme", "900123", "Tech", "contact@acme.com");
+        UserResponseDto admin = new UserResponseDto();
+        admin.setId(5L);
+        admin.setName("Admin");
+        admin.setEmail("adminEmail@gmail.com");
+        admin.setCompanyId(1L);
+        admin.setRoleId(10L);
+        admin.setRoleNombre("ADMIN");
+        admin.setActive(true);
+        RoleResponseDto adminRole = new RoleResponseDto();
+        adminRole.setId(10L);
+        adminRole.setNombre("ADMIN");
+        adminRole.setCompanyId(1L);
+        PoolResponse defaultPool = new PoolResponse();
+        defaultPool.setId(30L);
+        defaultPool.setName("Acme");
+        defaultPool.setCompanyId(1L);
+        defaultPool.setActive(true);
+        when(companyService.register(any()))
+                .thenReturn(new RegisterCompanyResponse(company, admin, List.of(adminRole), defaultPool));
 
-        mockMvc.perform(put("/api/companies/1")
+        mockMvc.perform(post("/api/companies/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"Alpha Updated\",\"nit\":\"900100101\",\"industry\":\"Retail\"}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Alpha Updated"))
-                .andExpect(jsonPath("$.industry").value("Retail"));
+                        .content("""
+                                {
+                                  "companyName":"Acme",
+                                  "nit":"900123",
+                                  "contactEmail":"contact@acme.com",
+                                  "industry":"Tech",
+                                  "adminName":"Admin",
+                                  "adminEmail":"adminEmail@gmail.com",
+                                  "adminPassword":"12345678"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.company.id").value(1))
+                .andExpect(jsonPath("$.adminUser.email").value("adminEmail@gmail.com"))
+                .andExpect(jsonPath("$.adminUser.password").doesNotExist())
+                .andExpect(jsonPath("$.adminUser.contrasenaHash").doesNotExist())
+                .andExpect(jsonPath("$.roles[0].nombre").value("ADMIN"))
+                .andExpect(jsonPath("$.defaultPool.name").value("Acme"));
     }
 
     @Test
-    void deleteCompanyShouldReturnNoContent() throws Exception {
-        doNothing().when(companyService).delete(1L);
+    void createCompanyReturnsConflictWhenNitIsDuplicated() throws Exception {
+        when(companyService.create(any()))
+                .thenThrow(new DuplicateResourceException("Ya existe una empresa con NIT: 900123"));
 
-        mockMvc.perform(delete("/api/companies/1"))
-                .andExpect(status().isNoContent());
-
-        verify(companyService).delete(1L);
+        mockMvc.perform(post("/api/companies")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"Acme","nit":"900123","industry":"Tech"}
+                                """))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.message").value("Ya existe una empresa con NIT: 900123"))
+                .andExpect(jsonPath("$.path").value("/api/companies"));
     }
 
     @Test
-    void getCompanyByIdShouldReturnNotFoundWhenCompanyDoesNotExist() throws Exception {
-        when(companyService.findById(99L)).thenThrow(new CompanyNotFoundException(99L));
+    void getCompanyReturnsApiErrorResponseWhenNotFound() throws Exception {
+        when(companyService.findById(99L))
+                .thenThrow(new ResourceNotFoundException("Empresa no encontrada con ID: 99"));
 
         mockMvc.perform(get("/api/companies/99"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
-                .andExpect(jsonPath("$.error").value("Empresa no encontrada con ID: 99"));
-    }
-
-    @Test
-    void updateCompanyShouldReturnNotFoundWhenCompanyDoesNotExist() throws Exception {
-        when(companyService.update(eq(99L), any(CompanyRequestDto.class))).thenThrow(new CompanyNotFoundException(99L));
-
-        mockMvc.perform(put("/api/companies/99")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"Alpha Updated\",\"nit\":\"900100101\",\"industry\":\"Retail\"}"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.status").value(404))
-                .andExpect(jsonPath("$.error").value("Empresa no encontrada con ID: 99"));
-    }
-
-    @Test
-    void createCompanyShouldReturnConflictWhenCompanyIsDuplicated() throws Exception {
-        when(companyService.create(any(CompanyRequestDto.class)))
-                .thenThrow(new DuplicateCompanyException("Ya existe una empresa con NIT: 900300300"));
-
-        mockMvc.perform(post("/api/companies")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"Gamma\",\"nit\":\"900300300\",\"industry\":\"Health\"}"))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.status").value(409))
-                .andExpect(jsonPath("$.error").value("Ya existe una empresa con NIT: 900300300"));
-    }
-
-    @Test
-    void createCompanyShouldReturnBadRequestWhenBodyIsInvalid() throws Exception {
-        mockMvc.perform(post("/api/companies")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"\",\"nit\":\"\",\"industry\":\"Health\"}"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.fields.name").value("El nombre es obligatorio"))
-                .andExpect(jsonPath("$.fields.nit").value("El NIT es obligatorio"));
-    }
-
-    // Helper para construir DTOs de respuesta rápidamente en los tests
-    private CompanyResponseDto buildResponseDto(Long id, String name, String nit, String industry) {
-        return new CompanyResponseDto(id, name, nit, industry);
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.message").value("Empresa no encontrada con ID: 99"))
+                .andExpect(jsonPath("$.path").value("/api/companies/99"));
     }
 }

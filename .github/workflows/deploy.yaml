@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
 
+
 jobs:
   build-and-publish:
     name: Build and Push Image to GHCR
@@ -17,14 +18,14 @@ jobs:
     - name: Mostrar rama actual
       run: "echo 'Rama actual: ${{ github.ref }}'"
 
-    - name: Checkout code
-      uses: actions/checkout@v3
+    - name: Checkout code 
+      uses: actions/checkout@v5
 
     - name: Set OWNER_LC
       run: echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
 
     - name: Log in to GHCR
-      uses: docker/login-action@v3
+      uses: docker/login-action@v4
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
@@ -44,11 +45,11 @@ jobs:
     name: Deploy on MicroK8s On-Premise
     runs-on: main
     needs: build-and-publish
-
+ 
     steps:
     - name: Checkout repo
       uses: actions/checkout@v3
     - name: Apply Kubernetes deployment
       run: sudo microk8s kubectl apply -f k8s/deployment.yaml
     - name: Restart Kubernetes deployment
-      run: sudo microk8s kubectl rollout restart deployment/organizapp-backend -n grupo14
+      run: sudo microk8s kubectl rollout restart deployment/organizapp-backend -n grupo14 
