@@ -1,6 +1,8 @@
 package co.javeriana.dw.organizapp.config;
 
 import co.javeriana.dw.organizapp.security.JwtAuthFilter;
+import co.javeriana.dw.organizapp.security.RestAccessDeniedHandler;
+import co.javeriana.dw.organizapp.security.RestAuthenticationEntryPoint;
 import co.javeriana.dw.organizapp.security.UserDetailsServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,14 +27,20 @@ public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
     private final UserDetailsServiceImpl userDetailsService;
     private final PasswordEncoder passwordEncoder;
+    private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
+    private final RestAccessDeniedHandler restAccessDeniedHandler;
 
     public SecurityConfig(
             JwtAuthFilter jwtAuthFilter,
             UserDetailsServiceImpl userDetailsService,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            RestAuthenticationEntryPoint restAuthenticationEntryPoint,
+            RestAccessDeniedHandler restAccessDeniedHandler) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.userDetailsService = userDetailsService;
         this.passwordEncoder = passwordEncoder;
+        this.restAuthenticationEntryPoint = restAuthenticationEntryPoint;
+        this.restAccessDeniedHandler = restAccessDeniedHandler;
     }
 
     @Bean
@@ -41,11 +49,22 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(withDefaults())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                // Respuestas JSON estándar (formato 2) para 401/403
+                .exceptionHandling(e -> e
+                        .authenticationEntryPoint(restAuthenticationEntryPoint) // 401
+                        .accessDeniedHandler(restAccessDeniedHandler)           // 403
+                )
+
                 .authorizeHttpRequests(auth -> auth
                         // Preflight CORS — siempre libre
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        // TODO: Entrega Final — reemplazar por anyRequest().authenticated()
-                        .anyRequest().permitAll()
+
+                        // Login libre
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+
+                        // Todo lo demás requiere JWT
+                        .anyRequest().authenticated()
                 )
                 .authenticationProvider(daoAuthenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
