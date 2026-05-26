@@ -59,6 +59,7 @@ public class AuthController {
 
         LoginResponse response = LoginResponse.builder()
                 .token(token)
+                .type("Bearer")
                 .userId(user.getId())
                 .userName(user.getName())
                 .userEmail(user.getEmail())
