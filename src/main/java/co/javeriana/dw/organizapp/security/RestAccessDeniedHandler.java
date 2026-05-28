@@ -31,7 +31,7 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
         HttpStatus status = HttpStatus.FORBIDDEN;
 
         ApiErrorResponse body = ApiErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
+                .timestamp(LocalDateTime.now().toString())
                 .status(status.value())
                 .error(status.getReasonPhrase())
                 .message("Acceso denegado")

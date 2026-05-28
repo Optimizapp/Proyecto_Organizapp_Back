@@ -31,7 +31,7 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
         HttpStatus status = HttpStatus.UNAUTHORIZED;
 
         ApiErrorResponse body = ApiErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
+                .timestamp(LocalDateTime.now().toString())
                 .status(status.value())
                 .error(status.getReasonPhrase())
                 .message("No autorizado")

@@ -57,14 +57,15 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
-                        // Preflight CORS — siempre libre
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/api/companies/register",
+                                "/actuator/health"
+                        ).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        // Login libre
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-
-                        // Todo lo demás requiere JWT
-                        .anyRequest().authenticated()
+                        // TODO: Entrega Final — descomentar la línea de abajo
+                        // .anyRequest().authenticated()
+                        .anyRequest().permitAll()
                 )
                 .authenticationProvider(daoAuthenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
@@ -82,4 +83,5 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
+
 }
