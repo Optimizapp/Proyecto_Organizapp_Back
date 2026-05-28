@@ -44,6 +44,12 @@
 			<artifactId>jackson-databind</artifactId>
 		</dependency>
 
+		<!-- Jackson JSR310 para serializar LocalDateTime/Instant a JSON -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.datatype</groupId>
+			<artifactId>jackson-datatype-jsr310</artifactId>
+		</dependency>
+
 		<!-- Bean Validation -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

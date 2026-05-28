@@ -76,7 +76,7 @@ public class GlobalExceptionHandler {
             String path,
             Map<String, String> fields) {
         ApiErrorResponse body = ApiErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
+                .timestamp(LocalDateTime.now().toString())
                 .status(status.value())
                 .error(status.getReasonPhrase())
                 .message(message)
