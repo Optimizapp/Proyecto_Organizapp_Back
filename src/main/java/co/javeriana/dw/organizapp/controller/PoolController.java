@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,21 +29,25 @@ public class PoolController {
         this.poolService = poolService;
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @GetMapping
     public ResponseEntity<List<PoolResponse>> getPools(@RequestParam(required = false) Long companyId) {
         return ResponseEntity.ok(poolService.findAll(companyId));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @GetMapping("/{id}")
     public ResponseEntity<PoolResponse> getPoolById(@PathVariable Long id) {
         return ResponseEntity.ok(poolService.findById(id));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @PostMapping
     public ResponseEntity<PoolResponse> createPool(@Valid @RequestBody CreatePoolRequest request) {
         return new ResponseEntity<>(poolService.create(request), HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @PutMapping("/{id}")
     public ResponseEntity<PoolResponse> updatePool(
             @PathVariable Long id,
@@ -50,6 +55,7 @@ public class PoolController {
         return ResponseEntity.ok(poolService.update(id, request));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePool(@PathVariable Long id) {
         poolService.delete(id);

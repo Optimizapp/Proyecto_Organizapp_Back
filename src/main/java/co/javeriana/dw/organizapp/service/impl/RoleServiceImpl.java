@@ -9,7 +9,9 @@ import co.javeriana.dw.organizapp.exception.BusinessRuleException;
 import co.javeriana.dw.organizapp.exception.DuplicateResourceException;
 import co.javeriana.dw.organizapp.exception.ResourceInUseException;
 import co.javeriana.dw.organizapp.exception.ResourceNotFoundException;
+import co.javeriana.dw.organizapp.security.SecurityUtils;
 import co.javeriana.dw.organizapp.repository.CompanyRepository;
+import org.springframework.security.access.AccessDeniedException;
 import co.javeriana.dw.organizapp.repository.ProcessRepository;
 import co.javeriana.dw.organizapp.repository.RoleRepository;
 import co.javeriana.dw.organizapp.repository.UserRepository;
@@ -82,7 +84,12 @@ public class RoleServiceImpl implements RoleService {
     @Override
     @Transactional(readOnly = true)
     public RoleResponseDto findById(Long id) {
-        return toDto(findRole(id));
+        Role role = findRole(id);
+        Long tenantId = SecurityUtils.getCurrentCompanyId();
+        if (role.getCompany() != null && !role.getCompany().getId().equals(tenantId)) {
+            throw new AccessDeniedException("No tiene acceso a este rol");
+        }
+        return toDto(role);
     }
 
     @Override
@@ -105,6 +112,10 @@ public class RoleServiceImpl implements RoleService {
     @Transactional
     public RoleResponseDto update(Long id, RoleRequestDto roleDto) {
         Role existingRole = findRole(id);
+        Long tenantId = SecurityUtils.getCurrentCompanyId();
+        if (existingRole.getCompany() != null && !existingRole.getCompany().getId().equals(tenantId)) {
+            throw new AccessDeniedException("No tiene acceso a este rol");
+        }
         Company company = findCompany(roleDto.getCompanyId());
         Process process = resolveProcessForCompany(roleDto.getProcessId(), company.getId());
         if (isRoleScopeOrNameChanged(existingRole, roleDto)) {
@@ -123,6 +134,10 @@ public class RoleServiceImpl implements RoleService {
     @Transactional
     public void delete(Long id) {
         Role role = findRole(id);
+        Long tenantId = SecurityUtils.getCurrentCompanyId();
+        if (role.getCompany() != null && !role.getCompany().getId().equals(tenantId)) {
+            throw new AccessDeniedException("No tiene acceso a este rol");
+        }
         if (userRepository.existsByRolId(id)) {
             throw new ResourceInUseException("No se puede eliminar el rol porque tiene usuarios asociados");
         }

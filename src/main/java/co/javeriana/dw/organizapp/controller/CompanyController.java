@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,16 +30,19 @@ public class CompanyController {
         this.companyService = companyService;
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<List<CompanyResponseDto>> getAllCompanies() {
         return ResponseEntity.ok(companyService.findAll());
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<CompanyResponseDto> getCompanyById(@PathVariable Long id) {
         return ResponseEntity.ok(companyService.findById(id));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<CompanyResponseDto> createCompany(
             @Valid @RequestBody CreateCompanyRequest companyDto) {
@@ -51,6 +55,7 @@ public class CompanyController {
         return new ResponseEntity<>(companyService.register(request), HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<CompanyResponseDto> updateCompany(
             @PathVariable Long id,
@@ -58,6 +63,7 @@ public class CompanyController {
         return ResponseEntity.ok(companyService.update(id, companyDto));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCompany(@PathVariable Long id) {
         companyService.delete(id);

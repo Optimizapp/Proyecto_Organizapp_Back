@@ -26,20 +26,27 @@ public class JwtProvider {
     }
 
     public String generateToken(User user) {
+        Date now = new Date();
+        Date expiry = new Date(System.currentTimeMillis() + expirationMs);
         return Jwts.builder()
+                .issuer("organizapp")
                 .subject(user.getEmail())
                 .claim("userId", user.getId())
                 .claim("companyId", user.getCompany().getId())
                 .claim("rolNombre", user.getRol().getNombre())
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expirationMs))
+                .issuedAt(now)
+                .expiration(expiry)
                 .signWith(secretKey)
                 .compact();
     }
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token);
+            Jwts.parser()
+                    .verifyWith(secretKey)
+                    .requireIssuer("organizapp")
+                    .build()
+                    .parseSignedClaims(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             return false;
@@ -54,9 +61,18 @@ public class JwtProvider {
         return getClaims(token).get("userId", Long.class);
     }
 
-    private Claims getClaims(String token) {
+    public String getRolFromToken(String token) {
+        return getClaims(token).get("rolNombre", String.class);
+    }
+
+    public Long getCompanyIdFromToken(String token) {
+        return getClaims(token).get("companyId", Long.class);
+    }
+
+    public Claims getClaims(String token) {
         return Jwts.parser()
                 .verifyWith(secretKey)
+                .requireIssuer("organizapp")
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

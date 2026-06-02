@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,6 +28,7 @@ public class PermissionController {
         this.permissionService = permissionService;
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @GetMapping
     public ResponseEntity<List<PermissionResponseDto>> getPermissions(@RequestParam(required = false) Long roleId) {
         List<PermissionResponseDto> permissions = roleId == null
@@ -35,12 +37,14 @@ public class PermissionController {
         return ResponseEntity.ok(permissions);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<PermissionResponseDto> createPermission(
             @Valid @RequestBody PermissionRequestDto permissionDto) {
         return new ResponseEntity<>(permissionService.create(permissionDto), HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<PermissionResponseDto> updatePermission(
             @PathVariable Long id,
@@ -48,6 +52,7 @@ public class PermissionController {
         return ResponseEntity.ok(permissionService.update(id, permissionDto));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePermission(@PathVariable Long id) {
         permissionService.delete(id);

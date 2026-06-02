@@ -19,9 +19,13 @@ import co.javeriana.dw.organizapp.repository.PoolRepository;
 import co.javeriana.dw.organizapp.repository.ProcessRepository;
 import co.javeriana.dw.organizapp.repository.UserRepository;
 import java.util.Optional;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.modelmapper.ModelMapper;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 class ProcessServiceImplTest {
 
@@ -43,6 +47,15 @@ class ProcessServiceImplTest {
                 userRepository,
                 poolRepository,
                 new ModelMapper());
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setAttribute("companyId", 1L);
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+    }
+
+    @AfterEach
+    void tearDown() {
+        RequestContextHolder.resetRequestAttributes();
     }
 
     @Test

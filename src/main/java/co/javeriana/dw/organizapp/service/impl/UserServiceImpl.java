@@ -9,7 +9,9 @@ import co.javeriana.dw.organizapp.entity.User;
 import co.javeriana.dw.organizapp.exception.BusinessRuleException;
 import co.javeriana.dw.organizapp.exception.DuplicateResourceException;
 import co.javeriana.dw.organizapp.exception.ResourceNotFoundException;
+import co.javeriana.dw.organizapp.security.SecurityUtils;
 import co.javeriana.dw.organizapp.repository.CompanyRepository;
+import org.springframework.security.access.AccessDeniedException;
 import co.javeriana.dw.organizapp.repository.RoleRepository;
 import co.javeriana.dw.organizapp.repository.UserRepository;
 import co.javeriana.dw.organizapp.service.UserService;
@@ -48,7 +50,8 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public List<UserResponseDto> findAll() {
-        return userRepository.findAll().stream()
+        Long tenantId = SecurityUtils.getCurrentCompanyId();
+        return userRepository.findByCompanyId(tenantId).stream()
                 .map(this::convertToDto)
                 .toList();
     }
@@ -58,6 +61,10 @@ public class UserServiceImpl implements UserService {
     public UserResponseDto findById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_MESSAGE + id));
+        Long tenantId = SecurityUtils.getCurrentCompanyId();
+        if (!user.getCompany().getId().equals(tenantId)) {
+            throw new AccessDeniedException("No tiene acceso a este usuario");
+        }
         return convertToDto(user);
     }
 

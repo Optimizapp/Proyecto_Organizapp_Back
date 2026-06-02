@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,6 +27,7 @@ public class ProcessVersionController {
         this.processVersionService = processVersionService;
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @GetMapping
     public ResponseEntity<List<ProcessVersionResponseDto>> getProcessVersions(
             @RequestParam(required = false) Long processId) {
@@ -35,17 +37,20 @@ public class ProcessVersionController {
         return ResponseEntity.ok(versions);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @GetMapping("/{id}")
     public ResponseEntity<ProcessVersionResponseDto> getProcessVersionById(@PathVariable Long id) {
         return ResponseEntity.ok(processVersionService.findById(id));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @PostMapping
     public ResponseEntity<ProcessVersionResponseDto> createProcessVersion(
             @Valid @RequestBody ProcessVersionRequestDto request) {
         return new ResponseEntity<>(processVersionService.create(request), HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @PutMapping("/{id}")
     public ResponseEntity<ProcessVersionResponseDto> updateProcessVersion(
             @PathVariable Long id,
@@ -53,6 +58,7 @@ public class ProcessVersionController {
         return ResponseEntity.ok(processVersionService.update(id, request));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @PostMapping("/{id}/publish")
     public ResponseEntity<ProcessVersionResponseDto> publishProcessVersion(@PathVariable Long id) {
         return ResponseEntity.ok(processVersionService.publish(id));

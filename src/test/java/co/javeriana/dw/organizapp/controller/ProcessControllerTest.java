@@ -91,7 +91,7 @@ class ProcessControllerTest {
         when(processService.findAll(eq(1L), eq("ACTIVE"))).thenReturn(List.of());
 
         mockMvc.perform(get("/api/processes")
-                        .param("companyId", "1")
+                        .requestAttr("companyId", 1L)
                         .param("status", "ACTIVE"))
                 .andExpect(status().isOk());
     }
