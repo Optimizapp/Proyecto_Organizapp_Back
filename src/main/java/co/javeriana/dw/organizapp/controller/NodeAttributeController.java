@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,6 +28,7 @@ public class NodeAttributeController {
         this.nodeAttributeService = nodeAttributeService;
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @GetMapping
     public ResponseEntity<List<NodeAttributeResponseDto>> getAttributes(
             @RequestParam(required = false) Long nodeId) {
@@ -36,17 +38,20 @@ public class NodeAttributeController {
         return ResponseEntity.ok(attributes);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @GetMapping("/{id}")
     public ResponseEntity<NodeAttributeResponseDto> getById(@PathVariable Long id) {
         return ResponseEntity.ok(nodeAttributeService.findById(id));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @PostMapping
     public ResponseEntity<NodeAttributeResponseDto> create(
             @Valid @RequestBody NodeAttributeRequestDto dto) {
         return new ResponseEntity<>(nodeAttributeService.create(dto), HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @PutMapping("/{id}")
     public ResponseEntity<NodeAttributeResponseDto> update(
             @PathVariable Long id,
@@ -54,6 +59,7 @@ public class NodeAttributeController {
         return ResponseEntity.ok(nodeAttributeService.update(id, dto));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         nodeAttributeService.delete(id);

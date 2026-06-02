@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,6 +28,7 @@ public class FlowController {
         this.flowService = flowService;
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @GetMapping
     public ResponseEntity<List<FlowResponseDto>> getFlows(@RequestParam(required = false) Long versionId) {
         List<FlowResponseDto> flows = versionId == null
@@ -35,21 +37,25 @@ public class FlowController {
         return ResponseEntity.ok(flows);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @GetMapping("/{id}")
     public ResponseEntity<FlowResponseDto> getFlowById(@PathVariable Long id) {
         return ResponseEntity.ok(flowService.findById(id));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @PostMapping
     public ResponseEntity<FlowResponseDto> createFlow(@Valid @RequestBody FlowRequestDto flowDto) {
         return new ResponseEntity<>(flowService.create(flowDto), HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @PutMapping("/{id}")
     public ResponseEntity<FlowResponseDto> updateFlow(@PathVariable Long id, @Valid @RequestBody FlowRequestDto flowDto) {
         return ResponseEntity.ok(flowService.update(id, flowDto));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteFlow(@PathVariable Long id) {
         flowService.delete(id);

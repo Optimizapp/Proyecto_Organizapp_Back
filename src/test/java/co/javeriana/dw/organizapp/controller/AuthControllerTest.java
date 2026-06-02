@@ -6,6 +6,7 @@ import co.javeriana.dw.organizapp.entity.User;
 import co.javeriana.dw.organizapp.exception.GlobalExceptionHandler;
 import co.javeriana.dw.organizapp.repository.UserRepository;
 import co.javeriana.dw.organizapp.security.JwtProvider;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -38,7 +39,8 @@ class AuthControllerTest {
         JwtProvider jwtProvider = new JwtProvider(SECRET, 86_400_000L);
 
         mockMvc = MockMvcBuilders
-                .standaloneSetup(new AuthController(userRepository, passwordEncoder, jwtProvider))
+                .standaloneSetup(new AuthController(userRepository, passwordEncoder, jwtProvider,
+                        new SimpleMeterRegistry()))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }

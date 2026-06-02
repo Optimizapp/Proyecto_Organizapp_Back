@@ -11,7 +11,9 @@ import co.javeriana.dw.organizapp.entity.User;
 import co.javeriana.dw.organizapp.exception.BusinessRuleException;
 import co.javeriana.dw.organizapp.exception.DuplicateResourceException;
 import co.javeriana.dw.organizapp.exception.ResourceNotFoundException;
+import co.javeriana.dw.organizapp.security.SecurityUtils;
 import co.javeriana.dw.organizapp.repository.CompanyRepository;
+import org.springframework.security.access.AccessDeniedException;
 import co.javeriana.dw.organizapp.repository.PoolRepository;
 import co.javeriana.dw.organizapp.repository.ProcessRepository;
 import co.javeriana.dw.organizapp.repository.UserRepository;
@@ -69,7 +71,12 @@ public class ProcessServiceImpl implements ProcessService {
     @Override
     @Transactional(readOnly = true)
     public ProcessResponseDto findById(Long id) {
-        return convertToDto(findExistingProcess(id));
+        Process process = findExistingProcess(id);
+        Long tenantId = SecurityUtils.getCurrentCompanyId();
+        if (!process.getCompany().getId().equals(tenantId)) {
+            throw new AccessDeniedException("No tiene acceso a este proceso");
+        }
+        return convertToDto(process);
     }
 
     @Override
@@ -97,6 +104,10 @@ public class ProcessServiceImpl implements ProcessService {
     @Transactional
     public ProcessResponseDto update(Long id, UpdateProcessRequest processDto) {
         Process existingProcess = findExistingProcess(id);
+        Long tenantId = SecurityUtils.getCurrentCompanyId();
+        if (!existingProcess.getCompany().getId().equals(tenantId)) {
+            throw new AccessDeniedException("No tiene acceso a este proceso");
+        }
         Company company = findCompany(processDto.getCompanyId());
         User user = findUser(processDto.getUserId());
         validateUserBelongsToCompany(user, company);
@@ -121,6 +132,10 @@ public class ProcessServiceImpl implements ProcessService {
     @Transactional
     public void delete(Long id) {
         Process process = findExistingProcess(id);
+        Long tenantId = SecurityUtils.getCurrentCompanyId();
+        if (!process.getCompany().getId().equals(tenantId)) {
+            throw new AccessDeniedException("No tiene acceso a este proceso");
+        }
         if (process.getStatus() != ProcessStatus.INACTIVE) {
             process.setStatus(ProcessStatus.INACTIVE);
             processRepository.save(process);

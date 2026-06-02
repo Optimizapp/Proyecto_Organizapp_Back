@@ -39,7 +39,7 @@ class RoleControllerTest {
 
         when(roleService.findByCompanyId(eq(1L), eq(null))).thenReturn(List.of(admin));
 
-        mockMvc.perform(get("/api/roles").param("companyId", "1"))
+        mockMvc.perform(get("/api/roles").requestAttr("companyId", 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(10))
                 .andExpect(jsonPath("$[0].nombre").value("ADMIN"))

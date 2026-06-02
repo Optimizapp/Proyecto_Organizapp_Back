@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,6 +28,7 @@ public class NodeController {
         this.nodeService = nodeService;
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @GetMapping
     public ResponseEntity<List<NodeResponseDto>> getNodes(@RequestParam(required = false) Long versionId) {
         List<NodeResponseDto> nodes = versionId == null
@@ -35,21 +37,25 @@ public class NodeController {
         return ResponseEntity.ok(nodes);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @GetMapping("/{id}")
     public ResponseEntity<NodeResponseDto> getNodeById(@PathVariable Long id) {
         return ResponseEntity.ok(nodeService.findById(id));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @PostMapping
     public ResponseEntity<NodeResponseDto> createNode(@Valid @RequestBody NodeRequestDto nodeDto) {
         return new ResponseEntity<>(nodeService.create(nodeDto), HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @PutMapping("/{id}")
     public ResponseEntity<NodeResponseDto> updateNode(@PathVariable Long id, @Valid @RequestBody NodeRequestDto nodeDto) {
         return ResponseEntity.ok(nodeService.update(id, nodeDto));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteNode(@PathVariable Long id) {
         nodeService.delete(id);
